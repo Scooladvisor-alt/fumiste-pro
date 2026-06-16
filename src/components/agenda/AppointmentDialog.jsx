@@ -41,6 +41,7 @@ export default function AppointmentDialog({
   clients,
   types,
   defaultStart,
+  defaultEnd,
 }) {
   const refresh = useRefreshData();
   const [saving, setSaving] = useState(false);
@@ -52,7 +53,7 @@ export default function AppointmentDialog({
     const start = base.start ? new Date(base.start) : defaultStart || new Date();
     const end = base.end
       ? new Date(base.end)
-      : new Date(start.getTime() + 60 * 60 * 1000);
+      : defaultEnd || new Date(start.getTime() + 60 * 60 * 1000);
     setForm({
       client_id: base.client_id || "",
       intervention_type: base.intervention_type || (types[0]?.name ?? ""),
@@ -61,7 +62,7 @@ export default function AppointmentDialog({
       endTime: toTimeInput(end),
       notes: base.notes || "",
     });
-  }, [open, appointment, defaultStart, types]);
+  }, [open, appointment, defaultStart, defaultEnd, types]);
 
   if (!form) return null;
 

@@ -35,6 +35,7 @@ export default function Agenda() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [slotStart, setSlotStart] = useState(null);
+  const [slotEnd, setSlotEnd] = useState(null);
 
   const navigate = (dir) => {
     if (view === "month") setCursor((c) => (dir > 0 ? addMonths(c, 1) : subMonths(c, 1)));
@@ -42,15 +43,17 @@ export default function Agenda() {
     else setCursor((c) => addDays(c, dir));
   };
 
-  const openNew = (start) => {
+  const openNew = (start, end) => {
     setEditing(null);
     setSlotStart(start || new Date());
+    setSlotEnd(end || null);
     setDialogOpen(true);
   };
 
   const openEdit = (appt) => {
     setEditing(appt);
     setSlotStart(null);
+    setSlotEnd(null);
     setDialogOpen(true);
   };
 
@@ -151,6 +154,7 @@ export default function Agenda() {
         clients={clients}
         types={types}
         defaultStart={slotStart}
+        defaultEnd={slotEnd}
       />
     </div>
   );

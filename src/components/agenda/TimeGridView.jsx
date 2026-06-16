@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useRef } from "react";
 import { startOfWeek, addDays, isSameDay, format, differenceInMinutes } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -6,13 +6,33 @@ import { cn } from "@/lib/utils";
 const HOURS = Array.from({ length: 24 }, (_, i) => i); // 0h -> 23h
 const HOUR_HEIGHT = 56;
 const START_HOUR = 0;
+const SNAP_MIN = 15;
+
+function minutesToTop(min) {
+  return (min - START_HOUR * 60) * (HOUR_HEIGHT / 60);
+}
 
 function eventStyle(a) {
   const start = new Date(a.start);
   const end = new Date(a.end);
-  const top = ((start.getHours() - START_HOUR) * 60 + start.getMinutes()) * (HOUR_HEIGHT / 60);
+  const top = minutesToTop(start.getHours() * 60 + start.getMinutes());
   const height = Math.max(24, differenceInMinutes(end, start) * (HOUR_HEIGHT / 60));
   return { top: `${top}px`, height: `${height}px` };
+}
+
+// Snap a pointer Y position (relative to the day column) to minutes-of-day
+function yToMinutes(clientY, columnEl) {
+  const rect = columnEl.getBoundingClientRect();
+  const y = Math.max(0, Math.min(rect.height, clientY - rect.top));
+  const raw = (y / HOUR_HEIGHT) * 60 + START_HOUR * 60;
+  return Math.round(raw / SNAP_MIN) * SNAP_MIN;
+}
+
+function dateFromMinutes(day, minutes) {
+  const d = new Date(day);
+  d.setHours(0, 0, 0, 0);
+  d.setMinutes(Math.max(0, Math.min(24 * 60 - SNAP_MIN, minutes)));
+  return d;
 }
 
 export default function TimeGridView({ date, mode, appointments, onSelectSlot, onSelectEvent, onDropEvent }) {
@@ -23,24 +43,56 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
   }, [date, mode]);
 
   const now = new Date();
-  const nowTop = (now.getHours() * 60 + now.getMinutes()) * (HOUR_HEIGHT / 60);
+  const nowTop = minutesToTop(now.getHours() * 60 + now.getMinutes());
 
-  const handleSlotClick = (day, hour, e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const offsetMin = ((e.clientY - rect.top) / HOUR_HEIGHT) * 60;
-    const d = new Date(day);
-    d.setHours(hour, offsetMin < 30 ? 0 : 30, 0, 0);
-    onSelectSlot(d);
+  // Drag-to-create state
+  const [draft, setDraft] = useState(null); // { dayKey, startMin, endMin }
+  const dragRef = useRef(null); // { columnEl, day, startMin, moved }
+
+  const handlePointerDown = (day, e) => {
+    if (e.button !== 0) return;
+    const columnEl = e.currentTarget;
+    const startMin = yToMinutes(e.clientY, columnEl);
+    dragRef.current = { columnEl, day, startMin, moved: false };
+    columnEl.setPointerCapture(e.pointerId);
+    setDraft({ dayKey: day.toISOString(), startMin, endMin: startMin + SNAP_MIN });
   };
 
-  const handleDrop = (day, hour, e) => {
+  const handlePointerMove = (e) => {
+    const drag = dragRef.current;
+    if (!drag) return;
+    const cur = yToMinutes(e.clientY, drag.columnEl);
+    if (Math.abs(cur - drag.startMin) >= SNAP_MIN) drag.moved = true;
+    const startMin = Math.min(drag.startMin, cur);
+    const endMin = Math.max(drag.startMin, cur);
+    setDraft({
+      dayKey: drag.day.toISOString(),
+      startMin,
+      endMin: endMin === startMin ? startMin + SNAP_MIN : endMin,
+    });
+  };
+
+  const handlePointerUp = () => {
+    const drag = dragRef.current;
+    dragRef.current = null;
+    if (!drag) return;
+    const d = draft;
+    setDraft(null);
+    if (!d) return;
+    const start = dateFromMinutes(drag.day, d.startMin);
+    if (drag.moved) {
+      const end = dateFromMinutes(drag.day, d.endMin);
+      onSelectSlot(start, end);
+    } else {
+      onSelectSlot(start);
+    }
+  };
+
+  const handleDrop = (day, e) => {
     e.preventDefault();
     const id = e.dataTransfer.getData("text/plain");
-    const rect = e.currentTarget.getBoundingClientRect();
-    const offsetMin = ((e.clientY - rect.top) / HOUR_HEIGHT) * 60;
-    const d = new Date(day);
-    d.setHours(hour, offsetMin < 30 ? 0 : 30, 0, 0);
-    onDropEvent && onDropEvent(id, d);
+    const minutes = yToMinutes(e.clientY, e.currentTarget);
+    onDropEvent && onDropEvent(id, dateFromMinutes(day, minutes));
   };
 
   return (
@@ -76,34 +128,62 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
         {days.map((day) => {
           const dayEvents = appointments.filter((a) => isSameDay(new Date(a.start), day));
           const isToday = isSameDay(day, now);
+          const dayDraft = draft && draft.dayKey === day.toISOString() ? draft : null;
           return (
-            <div key={day.toISOString()} className="flex-1 relative border-l border-border">
+            <div
+              key={day.toISOString()}
+              className="flex-1 relative border-l border-border select-none touch-none"
+              style={{ height: HOUR_HEIGHT * 24 }}
+              onPointerDown={(e) => handlePointerDown(day, e)}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => handleDrop(day, e)}
+            >
+              {HOURS.map((h) => (
+                <div
+                  key={h}
+                  className="border-b border-border hover:bg-secondary/30"
+                  style={{ height: HOUR_HEIGHT }}
+                />
+              ))}
+
               {isToday && (
                 <div className="absolute left-0 right-0 z-20 pointer-events-none" style={{ top: `${nowTop}px` }}>
                   <div className="h-0.5 bg-red-500" />
                   <div className="absolute -left-1 -top-[3px] w-2 h-2 rounded-full bg-red-500" />
                 </div>
               )}
-              {HOURS.map((h) => (
+
+              {dayDraft && (
                 <div
-                  key={h}
-                  className="border-b border-border hover:bg-secondary/40 cursor-pointer"
-                  style={{ height: HOUR_HEIGHT }}
-                  onClick={(e) => handleSlotClick(day, h, e)}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => handleDrop(day, h, e)}
-                />
-              ))}
+                  className="absolute left-1 right-1 z-10 rounded-lg bg-primary/30 border-2 border-primary pointer-events-none flex items-start px-2 py-1"
+                  style={{
+                    top: `${minutesToTop(dayDraft.startMin)}px`,
+                    height: `${(dayDraft.endMin - dayDraft.startMin) * (HOUR_HEIGHT / 60)}px`,
+                  }}
+                >
+                  <span className="text-[10px] font-semibold text-primary">
+                    {String(Math.floor(dayDraft.startMin / 60)).padStart(2, "0")}:
+                    {String(dayDraft.startMin % 60).padStart(2, "0")}
+                    {" – "}
+                    {String(Math.floor(dayDraft.endMin / 60)).padStart(2, "0")}:
+                    {String(dayDraft.endMin % 60).padStart(2, "0")}
+                  </span>
+                </div>
+              )}
+
               {dayEvents.map((a) => (
                 <button
                   key={a.id}
                   draggable
+                  onPointerDown={(e) => e.stopPropagation()}
                   onDragStart={(e) => e.dataTransfer.setData("text/plain", a.id)}
                   onClick={(e) => {
                     e.stopPropagation();
                     onSelectEvent(a);
                   }}
-                  className="absolute left-1 right-1 rounded-lg px-2 py-1 text-left text-white overflow-hidden shadow-sm"
+                  className="absolute left-1 right-1 z-10 rounded-lg px-2 py-1 text-left text-white overflow-hidden shadow-sm"
                   style={{ ...eventStyle(a), backgroundColor: a.color || "#3b82f6" }}
                 >
                   <p className="text-[11px] font-semibold leading-tight truncate">{a.title}</p>
