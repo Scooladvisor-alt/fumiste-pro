@@ -11,6 +11,36 @@
       "type": "number",
       "description": "Nombre de jours avant l'intervention pour envoyer le rappel",
       "default": 2
+    },
+    "reminder_subject": {
+      "type": "string",
+      "description": "Objet de l'e-mail de rappel"
+    },
+    "reminder_html": {
+      "type": "string",
+      "description": "Corps HTML de l'e-mail de rappel (avec variables)"
+    },
+    "review_enabled": {
+      "type": "boolean",
+      "description": "Activer l'envoi automatique des demandes d'avis Google",
+      "default": false
+    },
+    "review_days_after": {
+      "type": "number",
+      "description": "Nombre de jours apr\u00e8s l'intervention pour envoyer la demande d'avis",
+      "default": 1
+    },
+    "review_subject": {
+      "type": "string",
+      "description": "Objet de l'e-mail de demande d'avis Google"
+    },
+    "review_html": {
+      "type": "string",
+      "description": "Corps HTML de l'e-mail de demande d'avis Google (avec variables)"
+    },
+    "google_review_link": {
+      "type": "string",
+      "description": "Lien vers la page d'avis Google de l'entreprise"
     }
   },
   "required": []

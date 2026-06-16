@@ -4,7 +4,6 @@ function encodeRFC2047(str) {
   return `=?UTF-8?B?${btoa(unescape(encodeURIComponent(str)))}?=`;
 }
 
-// Construit un message MIME en HTML
 function buildMime({ to, subject, html }) {
   const lines = [
     `To: ${to}`,
@@ -22,7 +21,6 @@ function buildMime({ to, subject, html }) {
     .replace(/=+$/, '');
 }
 
-// Remplace les variables {{...}} par leurs valeurs
 function applyVars(template, vars) {
   let out = template || '';
   Object.entries(vars).forEach(([token, value]) => {
@@ -37,25 +35,26 @@ function extractEmail(text) {
 }
 
 const DEFAULT_HTML = `<p>Bonjour {{client}},</p>
-<p>Nous vous rappelons votre intervention {{type}} prévue le {{date}} à {{heure}}.</p>
-<p>À bientôt,</p>`;
+<p>Nous espérons que notre intervention {{type}} du {{date}} vous a satisfait.</p>
+<p><a href="{{lien_avis}}">Laisser un avis Google</a></p>`;
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
 
     const settingsList = await base44.asServiceRole.entities.ReminderSettings.list();
-    const settings = settingsList[0] || { enabled: true, days_before: 2 };
+    const settings = settingsList[0] || {};
 
-    if (!settings.enabled) {
+    if (!settings.review_enabled) {
       return Response.json({ skipped: true, reason: 'disabled' });
     }
 
-    const daysBefore = settings.days_before ?? 2;
+    const daysAfter = settings.review_days_after ?? 1;
 
+    // Journée cible = aujourd'hui - daysAfter (l'intervention a eu lieu il y a daysAfter jours)
     const now = new Date();
     const target = new Date(now);
-    target.setUTCDate(target.getUTCDate() + daysBefore);
+    target.setUTCDate(target.getUTCDate() - daysAfter);
     const targetDay = target.toISOString().slice(0, 10);
 
     const appointments = await base44.asServiceRole.entities.Appointment.list();
@@ -70,15 +69,15 @@ Deno.serve(async (req) => {
     const { accessToken } = await base44.asServiceRole.connectors.getConnection('gmail');
     const authHeader = { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' };
 
-    const subjectTpl = settings.reminder_subject || 'Rappel : votre intervention approche';
-    const htmlTpl = settings.reminder_html || DEFAULT_HTML;
+    const subjectTpl = settings.review_subject || 'Votre avis nous intéresse';
+    const htmlTpl = settings.review_html || DEFAULT_HTML;
+    const reviewLink = settings.google_review_link || '';
 
     let sent = 0;
     const errors = [];
 
     for (const appt of todays) {
       const client = clientMap[appt.client_id];
-      // L'e-mail est extrait de la description (notes) du rendez-vous
       const email = extractEmail(appt.notes || appt.description);
       if (!email) continue;
 
@@ -88,6 +87,7 @@ Deno.serve(async (req) => {
         '{{date}}': dt.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
         '{{heure}}': dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
         '{{type}}': appt.intervention_type || '',
+        '{{lien_avis}}': reviewLink,
       };
 
       const subject = applyVars(subjectTpl, vars);
