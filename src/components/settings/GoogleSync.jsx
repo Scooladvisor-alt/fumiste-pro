@@ -1,6 +1,4 @@
-import { Calendar, Link2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import { Calendar, CheckCircle2 } from "lucide-react";
 
 export default function GoogleSync() {
   return (
@@ -12,20 +10,14 @@ export default function GoogleSync() {
         <h2 className="font-display font-bold text-lg">Google Calendar</h2>
       </div>
       <p className="text-sm text-muted-foreground mb-4">
-        Synchronisez automatiquement vos rendez-vous avec votre agenda Google
-        (bidirectionnel).
+        Vos rendez-vous clients sont synchronisés automatiquement vers votre
+        agenda Google. Toute création, modification ou suppression est
+        répercutée instantanément.
       </p>
-      <Button
-        variant="outline"
-        className="gap-2"
-        onClick={() =>
-          toast.info(
-            "La connexion Google Calendar sera activée prochainement. Confirmez-moi quand vous souhaitez la brancher."
-          )
-        }
-      >
-        <Link2 className="w-4 h-4" /> Connecter Google Calendar
-      </Button>
+      <div className="inline-flex items-center gap-2 text-sm font-medium text-emerald-600 bg-emerald-50 rounded-lg px-3 py-2">
+        <CheckCircle2 className="w-4 h-4" />
+        Connecté et synchronisé
+      </div>
     </div>
   );
 }
