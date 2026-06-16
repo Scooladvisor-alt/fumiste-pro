@@ -58,7 +58,12 @@ Deno.serve(async (req) => {
 
     for (const appt of todays) {
       const client = clientMap[appt.client_id];
-      const email = appt.email || client?.email;
+      // L'e-mail est extrait de la description (notes) du rendez-vous, telle qu'elle
+      // est au moment de l'envoi — pas depuis la fiche client.
+      const emailMatch = (appt.notes || appt.description || '').match(
+        /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/
+      );
+      const email = emailMatch ? emailMatch[0] : null;
       if (!email) continue;
 
       const dt = new Date(appt.start);

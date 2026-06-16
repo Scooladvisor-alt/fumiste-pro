@@ -53,7 +53,6 @@ export default function AppointmentDialog({
       title: base.title || buildTitle(type, client?.full_name),
       titleEdited: !!base.title,
       notes: base.notes || "",
-      email: base.email ?? client?.email ?? "",
     });
   }, [open, appointment, defaultStart, defaultEnd, types, clients]);
 
@@ -79,7 +78,6 @@ export default function AppointmentDialog({
       client_id: v,
       title: f.titleEdited ? f.title : buildTitle(f.intervention_type, client?.full_name),
       notes: client ? buildContactBlock(client) : f.notes,
-      email: client?.email ?? f.email,
     }));
   };
   const setType = (v) => {
@@ -100,7 +98,6 @@ export default function AppointmentDialog({
       start: form.start,
       end: form.end,
       notes: form.notes,
-      email: form.email,
       color: typeObj?.color || "#3b82f6",
       title: form.title,
       description: form.notes,
@@ -140,17 +137,6 @@ export default function AppointmentDialog({
               clients={clients}
               value={form.client_id}
               onChange={setClient}
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>E-mail (pour les rappels)</Label>
-            <Input
-              type="email"
-              value={form.email}
-              onChange={(e) => set("email", e.target.value)}
-              placeholder="email@exemple.com"
-              className="h-11"
             />
           </div>
 
