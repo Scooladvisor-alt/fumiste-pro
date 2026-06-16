@@ -38,13 +38,13 @@ export default function ClientSelect({ clients, value, onChange }) {
         if (!o) reset();
       }}
     >
-      <div className="flex gap-2">
+      <div className="relative">
         <PopoverTrigger asChild>
           <Button
             type="button"
             variant="outline"
             role="combobox"
-            className="flex-1 justify-start font-normal h-11"
+            className="w-full justify-start font-normal h-11 pr-12"
             onClick={() => setMode("search")}
           >
             {selected ? (
@@ -58,16 +58,14 @@ export default function ClientSelect({ clients, value, onChange }) {
           </Button>
         </PopoverTrigger>
         <PopoverTrigger asChild>
-          <Button
+          <button
             type="button"
-            variant="outline"
-            size="icon"
-            className="h-11 w-11 shrink-0"
             title="Nouveau client"
             onClick={() => setMode("create")}
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 w-8 flex items-center justify-center rounded-md text-primary hover:bg-accent"
           >
             <Plus className="w-4 h-4" />
-          </Button>
+          </button>
         </PopoverTrigger>
       </div>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
