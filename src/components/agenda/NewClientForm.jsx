@@ -14,6 +14,7 @@ export default function NewClientForm({ initialName = "", onCreated, onBack }) {
     phone: "",
     email: "",
     city: "",
+    notes: "",
   });
 
   const nameRef = useRef(null);
@@ -42,6 +43,7 @@ export default function NewClientForm({ initialName = "", onCreated, onBack }) {
       phone: data.phone.trim(),
       email: data.email.trim(),
       city: data.city.trim(),
+      notes: data.notes.trim(),
     });
     await refresh();
     setSaving(false);
@@ -77,14 +79,23 @@ export default function NewClientForm({ initialName = "", onCreated, onBack }) {
           placeholder="06 12 34 56 78"
         />
       </div>
+      <div className="space-y-1.5">
+        <Label className="text-xs">E-mail</Label>
+        <Input
+          type="email"
+          value={data.email}
+          onChange={(e) => set("email", e.target.value)}
+          placeholder="jean.dupont@email.com"
+        />
+      </div>
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1.5">
           <Label className="text-xs">Ville</Label>
           <Input value={data.city} onChange={(e) => set("city", e.target.value)} />
         </div>
         <div className="space-y-1.5">
-          <Label className="text-xs">E-mail</Label>
-          <Input value={data.email} onChange={(e) => set("email", e.target.value)} />
+          <Label className="text-xs">Notes</Label>
+          <Input value={data.notes} onChange={(e) => set("notes", e.target.value)} />
         </div>
       </div>
 
