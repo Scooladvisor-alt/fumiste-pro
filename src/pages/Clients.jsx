@@ -32,7 +32,7 @@ export default function Clients() {
   };
 
   return (
-    <div className="p-4 md:p-6 h-screen flex flex-col">
+    <div className="p-4 md:p-6 h-full flex flex-col">
       <div className="flex items-center gap-3 mb-5">
         <div>
           <h1 className="font-display font-bold text-xl md:text-2xl">Clients</h1>

@@ -84,7 +84,7 @@ export default function Agenda() {
   };
 
   return (
-    <div className="h-screen flex flex-col p-4 md:p-6">
+    <div className="h-full flex flex-col p-4 md:p-6">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <div className="flex items-center gap-1">
