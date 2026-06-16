@@ -1,0 +1,30 @@
+{
+  "name": "Client",
+  "type": "object",
+  "properties": {
+    "full_name": {
+      "type": "string",
+      "description": "Nom et pr\u00e9nom du client"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Num\u00e9ro de t\u00e9l\u00e9phone"
+    },
+    "email": {
+      "type": "string",
+      "description": "Adresse e-mail"
+    },
+    "city": {
+      "type": "string",
+      "description": "Ville"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notes diverses"
+    }
+  },
+  "required": [
+    "full_name",
+    "phone"
+  ]
+}

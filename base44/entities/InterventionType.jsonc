@@ -1,0 +1,18 @@
+{
+  "name": "InterventionType",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nom du type d'intervention"
+    },
+    "color": {
+      "type": "string",
+      "description": "Couleur hexad\u00e9cimale associ\u00e9e",
+      "default": "#3b82f6"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}
