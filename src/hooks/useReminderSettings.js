@@ -28,6 +28,7 @@ const DEFAULTS = {
 export function useReminderSettings() {
   const [settings, setSettings] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -41,6 +42,7 @@ export function useReminderSettings() {
     })();
   }, []);
 
+  // Sauvegarde immédiate (interrupteurs, délais…)
   const update = async (patch) => {
     setSaving(true);
     setSettings((s) => ({ ...s, ...patch }));
@@ -48,5 +50,23 @@ export function useReminderSettings() {
     setSaving(false);
   };
 
-  return { settings, saving, update };
+  // Modification locale en attente (sujet / HTML), à valider avec save()
+  const updateLocal = (patch) => {
+    setSettings((s) => ({ ...s, ...patch }));
+    setDirty(true);
+  };
+
+  // Enregistre les champs en attente
+  const save = async (fields) => {
+    setSaving(true);
+    const patch = {};
+    fields.forEach((f) => {
+      patch[f] = settings[f];
+    });
+    await base44.entities.ReminderSettings.update(settings.id, patch);
+    setSaving(false);
+    setDirty(false);
+  };
+
+  return { settings, saving, dirty, update, updateLocal, save };
 }

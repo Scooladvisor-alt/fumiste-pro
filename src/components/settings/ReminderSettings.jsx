@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Mail, Loader2, Send } from "lucide-react";
+import { Mail, Loader2, Send, Save } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -24,7 +24,7 @@ const REMINDER_VARS = [
 
 export default function ReminderSettings() {
   const { toast } = useToast();
-  const { settings, saving, update } = useReminderSettings();
+  const { settings, saving, dirty, update, updateLocal, save } = useReminderSettings();
   const [testing, setTesting] = useState(false);
 
   const sendTest = async () => {
@@ -35,6 +35,11 @@ export default function ReminderSettings() {
       title: "Test effectué",
       description: `${res.data?.sent ?? 0} e-mail(s) envoyé(s) pour les interventions dans ${settings?.days_before} jour(s).`,
     });
+  };
+
+  const handleSave = async () => {
+    await save(["reminder_subject", "reminder_html"]);
+    toast({ title: "Enregistré", description: "Le modèle de rappel a été sauvegardé." });
   };
 
   if (!settings) return null;
@@ -81,10 +86,16 @@ export default function ReminderSettings() {
         <HtmlEmailEditor
           subject={settings.reminder_subject}
           html={settings.reminder_html}
-          onSubjectChange={(v) => update({ reminder_subject: v })}
-          onHtmlChange={(v) => update({ reminder_html: v })}
+          onSubjectChange={(v) => updateLocal({ reminder_subject: v })}
+          onHtmlChange={(v) => updateLocal({ reminder_html: v })}
           variables={REMINDER_VARS}
         />
+        <div className="flex justify-end mt-3">
+          <Button onClick={handleSave} disabled={saving || !dirty} size="sm" className="gap-2">
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Enregistrer
+          </Button>
+        </div>
       </div>
 
       <div className="pt-4 border-t border-border">

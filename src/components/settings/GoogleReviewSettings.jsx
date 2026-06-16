@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { Star, Loader2, Send } from "lucide-react";
+import { Star, Loader2, Send, Save } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -21,12 +20,11 @@ const REVIEW_VARS = [
   { token: "{{date}}", label: "Date de l'intervention" },
   { token: "{{heure}}", label: "Heure de l'intervention" },
   { token: "{{type}}", label: "Type d'intervention" },
-  { token: "{{lien_avis}}", label: "Lien avis Google" },
 ];
 
 export default function GoogleReviewSettings() {
   const { toast } = useToast();
-  const { settings, saving, update } = useReminderSettings();
+  const { settings, saving, dirty, update, updateLocal, save } = useReminderSettings();
   const [testing, setTesting] = useState(false);
 
   const sendTest = async () => {
@@ -37,6 +35,11 @@ export default function GoogleReviewSettings() {
       title: "Test effectué",
       description: `${res.data?.sent ?? 0} demande(s) d'avis envoyée(s).`,
     });
+  };
+
+  const handleSave = async () => {
+    await save(["review_subject", "review_html"]);
+    toast({ title: "Enregistré", description: "Le modèle de demande d'avis a été sauvegardé." });
   };
 
   if (!settings) return null;
@@ -79,27 +82,20 @@ export default function GoogleReviewSettings() {
         </Select>
       </div>
 
-      <div className="py-3 border-t border-border space-y-1.5">
-        <Label>Lien de la page d'avis Google</Label>
-        <Input
-          value={settings.google_review_link || ""}
-          onChange={(e) => update({ google_review_link: e.target.value })}
-          placeholder="https://g.page/r/..."
-          className="h-11"
-        />
-        <p className="text-xs text-muted-foreground">
-          Ce lien remplace la variable <span className="font-mono">{"{{lien_avis}}"}</span> dans l'e-mail.
-        </p>
-      </div>
-
       <div className="py-4 border-t border-border">
         <HtmlEmailEditor
           subject={settings.review_subject}
           html={settings.review_html}
-          onSubjectChange={(v) => update({ review_subject: v })}
-          onHtmlChange={(v) => update({ review_html: v })}
+          onSubjectChange={(v) => updateLocal({ review_subject: v })}
+          onHtmlChange={(v) => updateLocal({ review_html: v })}
           variables={REVIEW_VARS}
         />
+        <div className="flex justify-end mt-3">
+          <Button onClick={handleSave} disabled={saving || !dirty} size="sm" className="gap-2">
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Enregistrer
+          </Button>
+        </div>
       </div>
 
       <div className="pt-4 border-t border-border">
