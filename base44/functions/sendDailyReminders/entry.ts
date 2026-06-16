@@ -58,7 +58,8 @@ Deno.serve(async (req) => {
 
     for (const appt of todays) {
       const client = clientMap[appt.client_id];
-      if (!client?.email) continue;
+      const email = appt.email || client?.email;
+      if (!email) continue;
 
       const dt = new Date(appt.start);
       const dateStr = dt.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -75,7 +76,7 @@ Deno.serve(async (req) => {
         'À bientôt,',
       ].filter(Boolean).join('\n');
 
-      const raw = buildMime({ to: client.email, subject, body });
+      const raw = buildMime({ to: email, subject, body });
       const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
         method: 'POST',
         headers: authHeader,
