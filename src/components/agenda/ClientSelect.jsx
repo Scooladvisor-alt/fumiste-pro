@@ -66,6 +66,16 @@ export default function ClientSelect({ clients, value, onChange }) {
         ) : (
           <Command>
             <CommandInput placeholder="Nom du client…" value={search} onValueChange={setSearch} />
+            <div className="border-b border-border p-1">
+              <button
+                type="button"
+                onClick={() => setMode("create")}
+                className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-accent text-primary font-medium"
+              >
+                <UserPlus className="w-4 h-4" />
+                Nouveau client{search.trim() ? ` « ${search.trim()} »` : ""}
+              </button>
+            </div>
             <CommandList>
               <CommandEmpty>Aucun client trouvé.</CommandEmpty>
               <CommandGroup>
@@ -89,16 +99,6 @@ export default function ClientSelect({ clients, value, onChange }) {
                 ))}
               </CommandGroup>
             </CommandList>
-            <div className="border-t border-border p-1">
-              <button
-                type="button"
-                onClick={() => setMode("create")}
-                className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-accent text-primary font-medium"
-              >
-                <UserPlus className="w-4 h-4" />
-                Nouveau client{search.trim() ? ` « ${search.trim()} »` : ""}
-              </button>
-            </div>
           </Command>
         )}
       </PopoverContent>
