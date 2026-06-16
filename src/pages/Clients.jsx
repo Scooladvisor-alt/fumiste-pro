@@ -1,18 +1,17 @@
 import { useState, useMemo } from "react";
-import { Search, Plus, Users, ChevronRight } from "lucide-react";
+import { Search, Plus, Users, Trash2 } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
-import { useClients } from "@/hooks/useData";
+import { useClients, useRefreshData } from "@/hooks/useData";
 import ClientDialog from "@/components/clients/ClientDialog";
-import ClientDetail from "@/components/clients/ClientDetail";
+import EditableCell from "@/components/clients/EditableCell";
 
 export default function Clients() {
   const { data: clients } = useClients();
+  const refresh = useRefreshData();
   const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -22,13 +21,14 @@ export default function Clients() {
     );
   }, [clients, query]);
 
-  const openNew = () => {
-    setEditing(null);
-    setDialogOpen(true);
+  const updateField = async (client, field, value) => {
+    await base44.entities.Client.update(client.id, { [field]: value });
+    refresh();
   };
-  const openEdit = (c) => {
-    setEditing(c);
-    setDialogOpen(true);
+
+  const removeClient = async (client) => {
+    await base44.entities.Client.delete(client.id);
+    refresh();
   };
 
   return (
@@ -40,76 +40,74 @@ export default function Clients() {
             <Users className="w-3.5 h-3.5" /> {clients.length} client{clients.length > 1 ? "s" : ""}
           </p>
         </div>
-        <Button size="sm" onClick={openNew} className="ml-auto gap-1.5">
+        <Button size="sm" onClick={() => setDialogOpen(true)} className="ml-auto gap-1.5">
           <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Ajouter</span>
         </Button>
       </div>
 
-      <div className="grid md:grid-cols-[1fr_380px] gap-4 flex-1 min-h-0">
-        {/* List */}
-        <div className="flex flex-col min-h-0 bg-card rounded-2xl border border-border">
-          <div className="p-3 border-b border-border">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher un client…"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                className="pl-9 h-11 border-0 bg-secondary focus-visible:ring-1"
-              />
-            </div>
-          </div>
-          <div className="flex-1 overflow-auto p-2">
-            {filtered.length === 0 && (
-              <div className="text-center text-muted-foreground py-16 text-sm">
-                Aucun client {query && "trouvé"}.
-              </div>
-            )}
-            {filtered.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => setSelected(c)}
-                className={cn(
-                  "w-full flex items-center gap-3 p-3 rounded-xl text-left transition-colors",
-                  selected?.id === c.id ? "bg-accent" : "hover:bg-secondary"
-                )}
-              >
-                <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-sm shrink-0">
-                  {c.full_name?.charAt(0)?.toUpperCase()}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium text-sm truncate">{c.full_name}</p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {c.phone}{c.city ? ` · ${c.city}` : ""}
-                  </p>
-                </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
-              </button>
-            ))}
+      <div className="flex flex-col min-h-0 flex-1 bg-card rounded-2xl border border-border">
+        <div className="p-3 border-b border-border">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher un client…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="pl-9 h-11 border-0 bg-secondary focus-visible:ring-1"
+            />
           </div>
         </div>
 
-        {/* Detail */}
-        <div className="hidden md:block bg-card rounded-2xl border border-border overflow-hidden">
-          {selected ? (
-            <ClientDetail client={clients.find((c) => c.id === selected.id)} onClose={() => setSelected(null)} onEdit={openEdit} />
-          ) : (
-            <div className="h-full flex flex-col items-center justify-center text-center text-muted-foreground p-6">
-              <Users className="w-10 h-10 mb-3 opacity-40" />
-              <p className="text-sm">Sélectionnez un client pour voir ses détails et rendez-vous.</p>
+        <div className="flex-1 overflow-auto">
+          {filtered.length === 0 ? (
+            <div className="text-center text-muted-foreground py-16 text-sm">
+              Aucun client {query && "trouvé"}.
             </div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 bg-card z-10">
+                <tr className="text-left text-xs font-semibold text-muted-foreground border-b border-border">
+                  <th className="px-3 py-2.5 font-semibold">Nom</th>
+                  <th className="px-3 py-2.5 font-semibold">Téléphone</th>
+                  <th className="px-3 py-2.5 font-semibold">Ville</th>
+                  <th className="px-3 py-2.5 font-semibold">E-mail</th>
+                  <th className="px-3 py-2.5 w-10" />
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((c) => (
+                  <tr key={c.id} className="border-b border-border/60 last:border-0 hover:bg-secondary/40">
+                    <td className="px-1.5 py-1 align-middle">
+                      <EditableCell value={c.full_name} placeholder="Nom…" onSave={(v) => updateField(c, "full_name", v)} />
+                    </td>
+                    <td className="px-1.5 py-1 align-middle">
+                      <EditableCell value={c.phone} type="tel" placeholder="Téléphone…" onSave={(v) => updateField(c, "phone", v)} />
+                    </td>
+                    <td className="px-1.5 py-1 align-middle">
+                      <EditableCell value={c.city} placeholder="Ville…" onSave={(v) => updateField(c, "city", v)} />
+                    </td>
+                    <td className="px-1.5 py-1 align-middle">
+                      <EditableCell value={c.email} type="email" placeholder="E-mail…" onSave={(v) => updateField(c, "email", v)} />
+                    </td>
+                    <td className="px-1.5 py-1 align-middle text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeClient(c)}
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
         </div>
       </div>
 
-      {/* Mobile detail overlay */}
-      {selected && (
-        <div className="md:hidden fixed inset-0 z-30 bg-background">
-          <ClientDetail client={clients.find((c) => c.id === selected.id)} onClose={() => setSelected(null)} onEdit={openEdit} />
-        </div>
-      )}
-
-      <ClientDialog open={dialogOpen} onOpenChange={setDialogOpen} client={editing} />
+      <ClientDialog open={dialogOpen} onOpenChange={setDialogOpen} client={null} />
     </div>
   );
 }
