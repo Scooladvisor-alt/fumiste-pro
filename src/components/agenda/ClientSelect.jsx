@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { Check, ChevronsUpDown, User, Plus } from "lucide-react";
+import { Check, ChevronsUpDown, User, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -12,29 +11,33 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useRefreshData } from "@/hooks/useData";
+import NewClientForm from "./NewClientForm";
 
 export default function ClientSelect({ clients, value, onChange }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [creating, setCreating] = useState(false);
-  const refresh = useRefreshData();
+  const [mode, setMode] = useState("search"); // "search" | "create"
   const selected = clients.find((c) => c.id === value);
 
-  const handleCreate = async () => {
-    const name = search.trim();
-    if (!name) return;
-    setCreating(true);
-    const created = await base44.entities.Client.create({ full_name: name, phone: "" });
-    await refresh();
-    onChange(created.id);
-    setCreating(false);
+  const reset = () => {
+    setMode("search");
     setSearch("");
+  };
+
+  const handleCreated = (id) => {
+    onChange(id);
     setOpen(false);
+    reset();
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (!o) reset();
+      }}
+    >
       <PopoverTrigger asChild>
         <Button
           type="button"
@@ -54,54 +57,50 @@ export default function ClientSelect({ clients, value, onChange }) {
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-        <Command>
-          <CommandInput placeholder="Nom du client…" value={search} onValueChange={setSearch} />
-          <CommandList>
-            <CommandEmpty>
-              {search.trim() ? (
-                <button
-                  type="button"
-                  onClick={handleCreate}
-                  disabled={creating}
-                  className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-accent text-left"
-                >
-                  <Plus className="w-4 h-4 text-primary" />
-                  <span>{creating ? "Création…" : <>Créer le client « <span className="font-medium">{search.trim()}</span> »</>}</span>
-                </button>
-              ) : (
-                "Tapez un nom pour rechercher ou créer."
-              )}
-            </CommandEmpty>
-            <CommandGroup>
-              {clients.map((c) => (
-                <CommandItem
-                  key={c.id}
-                  value={`${c.full_name} ${c.phone} ${c.city || ""}`}
-                  onSelect={() => {
-                    onChange(c.id);
-                    setOpen(false);
-                  }}
-                >
-                  <Check
-                    className={cn("mr-2 h-4 w-4", value === c.id ? "opacity-100" : "opacity-0")}
-                  />
-                  <span className="flex flex-col">
-                    <span className="font-medium">{c.full_name}</span>
-                    <span className="text-xs text-muted-foreground">{c.phone}</span>
-                  </span>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-            {search.trim() && (
+        {mode === "create" ? (
+          <NewClientForm
+            initialName={search}
+            onCreated={handleCreated}
+            onBack={() => setMode("search")}
+          />
+        ) : (
+          <Command>
+            <CommandInput placeholder="Nom du client…" value={search} onValueChange={setSearch} />
+            <CommandList>
+              <CommandEmpty>Aucun client trouvé.</CommandEmpty>
               <CommandGroup>
-                <CommandItem value={`__create__${search}`} onSelect={handleCreate} className="text-primary">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Créer « {search.trim()} »
-                </CommandItem>
+                {clients.map((c) => (
+                  <CommandItem
+                    key={c.id}
+                    value={`${c.full_name} ${c.phone} ${c.city || ""}`}
+                    onSelect={() => {
+                      onChange(c.id);
+                      setOpen(false);
+                    }}
+                  >
+                    <Check
+                      className={cn("mr-2 h-4 w-4", value === c.id ? "opacity-100" : "opacity-0")}
+                    />
+                    <span className="flex flex-col">
+                      <span className="font-medium">{c.full_name}</span>
+                      <span className="text-xs text-muted-foreground">{c.phone}</span>
+                    </span>
+                  </CommandItem>
+                ))}
               </CommandGroup>
-            )}
-          </CommandList>
-        </Command>
+            </CommandList>
+            <div className="border-t border-border p-1">
+              <button
+                type="button"
+                onClick={() => setMode("create")}
+                className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-accent text-primary font-medium"
+              >
+                <UserPlus className="w-4 h-4" />
+                Nouveau client{search.trim() ? ` « ${search.trim()} »` : ""}
+              </button>
+            </div>
+          </Command>
+        )}
       </PopoverContent>
     </Popover>
   );
