@@ -9,7 +9,7 @@ import {
   differenceInMinutes,
 } from "date-fns";
 import { fr } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, RefreshCw } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -36,6 +36,14 @@ export default function Agenda() {
   const [editing, setEditing] = useState(null);
   const [slotStart, setSlotStart] = useState(null);
   const [slotEnd, setSlotEnd] = useState(null);
+  const [syncing, setSyncing] = useState(false);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    await base44.functions.invoke("syncFromGoogle", {});
+    await refresh();
+    setSyncing(false);
+  };
 
   const navigate = (dir) => {
     if (view === "month") setCursor((c) => (dir > 0 ? addMonths(c, 1) : subMonths(c, 1)));
@@ -105,6 +113,15 @@ export default function Agenda() {
         <h1 className="font-display font-bold text-lg md:text-xl capitalize">{label()}</h1>
 
         <div className="ml-auto flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleSync}
+            disabled={syncing}
+            title="Synchroniser avec Google Agenda"
+          >
+            <RefreshCw className={cn("w-4 h-4", syncing && "animate-spin")} />
+          </Button>
           <div className="flex bg-secondary rounded-lg p-0.5">
             {VIEWS.map((v) => (
               <button

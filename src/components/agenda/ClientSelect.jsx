@@ -68,7 +68,10 @@ export default function ClientSelect({ clients, value, onChange }) {
           </button>
         </PopoverTrigger>
       </div>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+      <PopoverContent
+        className="w-[--radix-popover-trigger-width] p-0 bg-popover z-[60] shadow-lg"
+        align="start"
+      >
         {mode === "create" ? (
           <NewClientForm
             initialName={search}
@@ -88,7 +91,7 @@ export default function ClientSelect({ clients, value, onChange }) {
                 Nouveau client{search.trim() ? ` « ${search.trim()} »` : ""}
               </button>
             </div>
-            <CommandList>
+            <CommandList className="max-h-60">
               <CommandEmpty>Aucun client trouvé.</CommandEmpty>
               <CommandGroup>
                 {clients.map((c) => (
