@@ -1,11 +1,12 @@
 import { useState, useMemo } from "react";
-import { Search, Plus, Users, Trash2 } from "lucide-react";
+import { Search, Plus, Trash2, Download } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useClients, useRefreshData } from "@/hooks/useData";
 import ClientDialog from "@/components/clients/ClientDialog";
 import EditableCell from "@/components/clients/EditableCell";
+import { exportClientsToCsv } from "@/lib/exportCsv";
 
 export default function Clients() {
   const { data: clients } = useClients();
@@ -34,15 +35,22 @@ export default function Clients() {
   return (
     <div className="p-4 md:p-6 h-full flex flex-col">
       <div className="flex items-center gap-3 mb-5">
-        <div>
-          <h1 className="font-display font-bold text-xl md:text-2xl">Clients</h1>
-          <p className="text-sm text-muted-foreground flex items-center gap-1.5">
-            <Users className="w-3.5 h-3.5" /> {clients.length} client{clients.length > 1 ? "s" : ""}
-          </p>
+        <h1 className="font-display font-bold text-xl md:text-2xl">
+          Clients <span className="text-muted-foreground font-semibold">({clients.length})</span>
+        </h1>
+        <div className="ml-auto flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => exportClientsToCsv(filtered)}
+            disabled={clients.length === 0}
+            className="gap-2"
+          >
+            <Download className="w-4 h-4" /> <span className="hidden sm:inline">Exporter CSV</span>
+          </Button>
+          <Button onClick={() => setDialogOpen(true)} className="gap-2">
+            <Plus className="w-4 h-4" /> Ajouter
+          </Button>
         </div>
-        <Button size="sm" onClick={() => setDialogOpen(true)} className="ml-auto gap-1.5">
-          <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Ajouter</span>
-        </Button>
       </div>
 
       <div className="flex flex-col min-h-0 flex-1 bg-card rounded-2xl border border-border">
