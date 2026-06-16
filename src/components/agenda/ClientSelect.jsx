@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, ChevronsUpDown, User, UserPlus } from "lucide-react";
+import { Check, Plus, User, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,24 +38,38 @@ export default function ClientSelect({ clients, value, onChange }) {
         if (!o) reset();
       }}
     >
-      <PopoverTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          role="combobox"
-          className="w-full justify-between font-normal h-11"
-        >
-          {selected ? (
-            <span className="flex items-center gap-2 truncate">
-              <User className="w-4 h-4 text-muted-foreground shrink-0" />
-              {selected.full_name}
-            </span>
-          ) : (
-            <span className="text-muted-foreground">Rechercher ou créer un client…</span>
-          )}
-          <ChevronsUpDown className="w-4 h-4 opacity-50 shrink-0" />
-        </Button>
-      </PopoverTrigger>
+      <div className="flex gap-2">
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            role="combobox"
+            className="flex-1 justify-start font-normal h-11"
+            onClick={() => setMode("search")}
+          >
+            {selected ? (
+              <span className="flex items-center gap-2 truncate">
+                <User className="w-4 h-4 text-muted-foreground shrink-0" />
+                {selected.full_name}
+              </span>
+            ) : (
+              <span className="text-muted-foreground">Rechercher un client…</span>
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-11 w-11 shrink-0"
+            title="Nouveau client"
+            onClick={() => setMode("create")}
+          >
+            <Plus className="w-4 h-4" />
+          </Button>
+        </PopoverTrigger>
+      </div>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
         {mode === "create" ? (
           <NewClientForm
