@@ -85,7 +85,8 @@ export default function AppointmentDialog({
     setForm((f) => ({
       ...f,
       intervention_type: v,
-      title: f.titleEdited ? f.title : buildTitle(v, client?.full_name),
+      title: buildTitle(v, client?.full_name),
+      titleEdited: false,
     }));
   };
 
