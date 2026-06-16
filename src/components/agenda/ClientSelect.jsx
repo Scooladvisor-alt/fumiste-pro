@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Plus, User, UserPlus } from "lucide-react";
+import { Check, Plus, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -81,16 +81,6 @@ export default function ClientSelect({ clients, value, onChange }) {
         ) : (
           <Command className="bg-popover h-auto">
             <CommandInput placeholder="Nom du client…" value={search} onValueChange={setSearch} />
-            <div className="border-b border-border p-1">
-              <button
-                type="button"
-                onClick={() => setMode("create")}
-                className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-accent text-primary font-medium"
-              >
-                <UserPlus className="w-4 h-4" />
-                Nouveau client{search.trim() ? ` « ${search.trim()} »` : ""}
-              </button>
-            </div>
             <CommandList className="max-h-60 min-h-[120px]">
               <CommandEmpty>Aucun client trouvé.</CommandEmpty>
               <CommandGroup>

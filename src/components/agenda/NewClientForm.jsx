@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,22 @@ export default function NewClientForm({ initialName = "", onCreated, onBack }) {
     city: "",
   });
 
+  const nameRef = useRef(null);
+  const phoneRef = useRef(null);
+
+  useEffect(() => {
+    const t = setTimeout(() => nameRef.current?.focus(), 50);
+    return () => clearTimeout(t);
+  }, []);
+
   const set = (k, v) => setData((d) => ({ ...d, [k]: v }));
+
+  const focusNext = (e, nextRef) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      nextRef.current?.focus();
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -46,15 +61,17 @@ export default function NewClientForm({ initialName = "", onCreated, onBack }) {
       <div className="space-y-1.5">
         <Label className="text-xs">Nom et prénom *</Label>
         <Input
-          autoFocus
+          ref={nameRef}
           value={data.full_name}
           onChange={(e) => set("full_name", e.target.value)}
+          onKeyDown={(e) => focusNext(e, phoneRef)}
           placeholder="Jean Dupont"
         />
       </div>
       <div className="space-y-1.5">
         <Label className="text-xs">Téléphone *</Label>
         <Input
+          ref={phoneRef}
           value={data.phone}
           onChange={(e) => set("phone", e.target.value)}
           placeholder="06 12 34 56 78"
