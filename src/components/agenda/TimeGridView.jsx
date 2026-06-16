@@ -3,9 +3,9 @@ import { startOfWeek, addDays, isSameDay, format, differenceInMinutes } from "da
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
-const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 7h -> 20h
+const HOURS = Array.from({ length: 24 }, (_, i) => i); // 0h -> 23h
 const HOUR_HEIGHT = 56;
-const START_HOUR = 7;
+const START_HOUR = 0;
 
 function eventStyle(a) {
   const start = new Date(a.start);
@@ -21,6 +21,9 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
     const start = startOfWeek(date, { weekStartsOn: 1 });
     return Array.from({ length: 7 }, (_, i) => addDays(start, i));
   }, [date, mode]);
+
+  const now = new Date();
+  const nowTop = (now.getHours() * 60 + now.getMinutes()) * (HOUR_HEIGHT / 60);
 
   const handleSlotClick = (day, hour, e) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -66,14 +69,21 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
         <div className="w-14 shrink-0">
           {HOURS.map((h) => (
             <div key={h} className="text-[10px] text-muted-foreground text-right pr-2 relative" style={{ height: HOUR_HEIGHT }}>
-              <span className="absolute -top-1.5 right-2">{h}:00</span>
+              {h > 0 && <span className="absolute -top-1.5 right-2">{String(h).padStart(2, "0")}:00</span>}
             </div>
           ))}
         </div>
         {days.map((day) => {
           const dayEvents = appointments.filter((a) => isSameDay(new Date(a.start), day));
+          const isToday = isSameDay(day, now);
           return (
             <div key={day.toISOString()} className="flex-1 relative border-l border-border">
+              {isToday && (
+                <div className="absolute left-0 right-0 z-20 pointer-events-none" style={{ top: `${nowTop}px` }}>
+                  <div className="h-0.5 bg-red-500" />
+                  <div className="absolute -left-1 -top-[3px] w-2 h-2 rounded-full bg-red-500" />
+                </div>
+              )}
               {HOURS.map((h) => (
                 <div
                   key={h}
