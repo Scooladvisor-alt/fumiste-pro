@@ -1,0 +1,17 @@
+{
+  "name": "ReminderSettings",
+  "type": "object",
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "description": "Activer l'envoi automatique des rappels par e-mail",
+      "default": true
+    },
+    "days_before": {
+      "type": "number",
+      "description": "Nombre de jours avant l'intervention pour envoyer le rappel",
+      "default": 2
+    }
+  },
+  "required": []
+}
