@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { format } from "date-fns";
 import { Trash2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import {
@@ -21,18 +20,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import ClientSelect from "./ClientSelect";
-import { buildTitle, buildDescription } from "@/lib/appointments";
+import { buildTitle } from "@/lib/appointments";
 import { useRefreshData } from "@/hooks/useData";
-
-function toDateInput(d) {
-  return format(new Date(d), "yyyy-MM-dd");
-}
-function toTimeInput(d) {
-  return format(new Date(d), "HH:mm");
-}
-function combine(dateStr, timeStr) {
-  return new Date(`${dateStr}T${timeStr}:00`).toISOString();
-}
 
 export default function AppointmentDialog({
   open,
@@ -54,35 +43,64 @@ export default function AppointmentDialog({
     const end = base.end
       ? new Date(base.end)
       : defaultEnd || new Date(start.getTime() + 60 * 60 * 1000);
+    const client = clients.find((c) => c.id === base.client_id);
+    const type = base.intervention_type || (types[0]?.name ?? "");
     setForm({
       client_id: base.client_id || "",
-      intervention_type: base.intervention_type || (types[0]?.name ?? ""),
-      date: toDateInput(start),
-      startTime: toTimeInput(start),
-      endTime: toTimeInput(end),
+      intervention_type: type,
+      start: start.toISOString(),
+      end: end.toISOString(),
+      title: base.title || buildTitle(type, client?.full_name),
+      titleEdited: !!base.title,
       notes: base.notes || "",
     });
-  }, [open, appointment, defaultStart, defaultEnd, types]);
+  }, [open, appointment, defaultStart, defaultEnd, types, clients]);
 
   if (!form) return null;
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
+  // Build the auto contact block injected at the top of the description
+  const buildContactBlock = (client) => {
+    if (!client) return "";
+    return [
+      `Client : ${client.full_name || "-"}`,
+      `Téléphone : ${client.phone || "-"}`,
+      `Email : ${client.email || "-"}`,
+    ].join("\n");
+  };
+
+  // When selecting a client: auto-fill title AND prepend phone + email to the description
+  const setClient = (v) => {
+    const client = clients.find((c) => c.id === v);
+    setForm((f) => ({
+      ...f,
+      client_id: v,
+      title: f.titleEdited ? f.title : buildTitle(f.intervention_type, client?.full_name),
+      notes: client ? buildContactBlock(client) : f.notes,
+    }));
+  };
+  const setType = (v) => {
+    const client = clients.find((c) => c.id === form.client_id);
+    setForm((f) => ({
+      ...f,
+      intervention_type: v,
+      title: f.titleEdited ? f.title : buildTitle(v, client?.full_name),
+    }));
+  };
+
   const handleSave = async () => {
     setSaving(true);
-    const client = clients.find((c) => c.id === form.client_id);
     const typeObj = types.find((t) => t.name === form.intervention_type);
-    const start = combine(form.date, form.startTime);
-    const end = combine(form.date, form.endTime);
     const payload = {
       client_id: form.client_id,
       intervention_type: form.intervention_type,
-      start,
-      end,
+      start: form.start,
+      end: form.end,
       notes: form.notes,
       color: typeObj?.color || "#3b82f6",
-      title: buildTitle(form.intervention_type, client?.full_name),
-      description: buildDescription(client, form.intervention_type, form.notes),
+      title: form.title,
+      description: form.notes,
     };
     if (appointment?.id) {
       await base44.entities.Appointment.update(appointment.id, payload);
@@ -118,7 +136,17 @@ export default function AppointmentDialog({
             <ClientSelect
               clients={clients}
               value={form.client_id}
-              onChange={(v) => set("client_id", v)}
+              onChange={setClient}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Titre</Label>
+            <Input
+              value={form.title}
+              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value, titleEdited: true }))}
+              placeholder="Titre du rendez-vous"
+              className="h-11"
             />
           </div>
 
@@ -126,7 +154,7 @@ export default function AppointmentDialog({
             <Label>Type d'intervention</Label>
             <Select
               value={form.intervention_type}
-              onValueChange={(v) => set("intervention_type", v)}
+              onValueChange={setType}
             >
               <SelectTrigger className="h-11">
                 <SelectValue placeholder="Choisir…" />
@@ -148,43 +176,13 @@ export default function AppointmentDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label>Date</Label>
-            <Input
-              type="date"
-              value={form.date}
-              onChange={(e) => set("date", e.target.value)}
-              className="h-11"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>Début</Label>
-              <Input
-                type="time"
-                value={form.startTime}
-                onChange={(e) => set("startTime", e.target.value)}
-                className="h-11"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Fin</Label>
-              <Input
-                type="time"
-                value={form.endTime}
-                onChange={(e) => set("endTime", e.target.value)}
-                className="h-11"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Notes</Label>
+            <Label>Description</Label>
             <Textarea
               value={form.notes}
               onChange={(e) => set("notes", e.target.value)}
-              placeholder="Informations complémentaires…"
+              placeholder="Description de l'événement…"
               className="resize-none"
+              rows={5}
             />
           </div>
         </div>
