@@ -69,7 +69,7 @@ export default function ClientSelect({ clients, value, onChange }) {
         </PopoverTrigger>
       </div>
       <PopoverContent
-        className="w-[--radix-popover-trigger-width] p-0 bg-popover z-[60] shadow-lg"
+        className="w-[--radix-popover-trigger-width] min-w-[280px] p-0 bg-popover z-[60] shadow-xl border border-border rounded-lg overflow-hidden"
         align="start"
       >
         {mode === "create" ? (
@@ -79,7 +79,7 @@ export default function ClientSelect({ clients, value, onChange }) {
             onBack={() => setMode("search")}
           />
         ) : (
-          <Command>
+          <Command className="bg-popover h-auto">
             <CommandInput placeholder="Nom du client…" value={search} onValueChange={setSearch} />
             <div className="border-b border-border p-1">
               <button
@@ -91,7 +91,7 @@ export default function ClientSelect({ clients, value, onChange }) {
                 Nouveau client{search.trim() ? ` « ${search.trim()} »` : ""}
               </button>
             </div>
-            <CommandList className="max-h-60">
+            <CommandList className="max-h-60 min-h-[120px]">
               <CommandEmpty>Aucun client trouvé.</CommandEmpty>
               <CommandGroup>
                 {clients.map((c) => (
