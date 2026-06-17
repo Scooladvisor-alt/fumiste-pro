@@ -17,6 +17,9 @@ import Clients from '@/pages/Clients';
 import Agenda from '@/pages/Agenda';
 import Parametres from '@/pages/Parametres';
 import Landing from '@/pages/Landing';
+import AccessCode from '@/pages/AccessCode';
+import Onboarding from '@/pages/Onboarding';
+import AccessGuard from '@/components/AccessGuard';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -51,11 +54,15 @@ const AuthenticatedApp = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
-        <Route element={<Layout />}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/clients" element={<Clients />} />
-          <Route path="/agenda" element={<Agenda />} />
-          <Route path="/parametres" element={<Parametres />} />
+        <Route path="/code" element={<AccessCode />} />
+        <Route path="/onboarding" element={<Onboarding />} />
+        <Route element={<AccessGuard />}>
+          <Route element={<Layout />}>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/clients" element={<Clients />} />
+            <Route path="/agenda" element={<Agenda />} />
+            <Route path="/parametres" element={<Parametres />} />
+          </Route>
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

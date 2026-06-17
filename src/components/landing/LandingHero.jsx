@@ -1,6 +1,5 @@
 import { ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { base44 } from "@/api/base44Client";
 
 const HERO_BG = "https://media.base44.com/images/public/6a317a4a4d788d4ef9ab684e/b669a7374_generated_image.png";
 const MOCKUP = "https://media.base44.com/images/public/6a317a4a4d788d4ef9ab684e/c24745fde_generated_image.png";
@@ -28,8 +27,8 @@ export default function LandingHero() {
         </p>
 
         <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-          <Button size="lg" className="bg-blue-600 hover:bg-blue-700 rounded-xl h-12 px-7 text-base" onClick={() => base44.auth.redirectToLogin()}>
-            Essayer gratuitement <ArrowRight className="w-4 h-4" />
+          <Button size="lg" className="bg-blue-600 hover:bg-blue-700 rounded-xl h-12 px-7 text-base" asChild>
+            <a href="#pricing">Choisir une offre <ArrowRight className="w-4 h-4" /></a>
           </Button>
           <Button size="lg" variant="outline" className="rounded-xl h-12 px-7 text-base border-slate-300" asChild>
             <a href="#features">Voir les fonctionnalités</a>
