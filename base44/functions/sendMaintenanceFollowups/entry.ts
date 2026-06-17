@@ -34,19 +34,7 @@ function formatFr(dateStr) {
   return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
-// Jour anniversaire exact : la date tombe-t-elle exactement N mois avant aujourd'hui
-// (même mois et même jour de calendrier) ?
-function isAnniversary(dateStr, months) {
-  if (!dateStr) return false;
-  const target = new Date();
-  target.setMonth(target.getMonth() - months);
-  const d = new Date(dateStr + 'T00:00:00Z');
-  return d.getUTCFullYear() === target.getUTCFullYear()
-    && d.getUTCMonth() === target.getUTCMonth()
-    && d.getUTCDate() === target.getUTCDate();
-}
-
-// La date est-elle "due" : remonte-t-elle à au moins N mois (anniversaire atteint ou dépassé) ?
+// La date remonte-t-elle à au moins N mois (échéance atteinte ou dépassée) ?
 function isDue(dateStr, months) {
   if (!dateStr) return false;
   const threshold = new Date();
@@ -56,91 +44,91 @@ function isDue(dateStr, months) {
   return d.getTime() <= threshold.getTime();
 }
 
-// Extrait la première adresse e-mail présente dans un texte (notes de l'événement).
-function extractEmail(text) {
-  if (!text) return null;
-  const m = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-  return m ? m[0] : null;
+// Envoie un e-mail Gmail. Renvoie true si l'envoi a réussi.
+async function sendEmail(authHeader, { to, subject, html }) {
+  const raw = buildMime({ to, subject, html });
+  const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+    method: 'POST',
+    headers: authHeader,
+    body: JSON.stringify({ raw }),
+  });
+  return res.ok;
 }
 
-// Envoie les relances entretien : ramonage (annuel) et test d'étanchéité (triennal).
-// Anti-doublon via les champs *_sent_date du client.
+// Relances entretien basées UNIQUEMENT sur les colonnes client :
+//  - last_ramonage_date    : relance ramonage si ≥ followup_months (12 par défaut)
+//  - last_etancheite_date  : relance étanchéité si ≥ etancheite_followup_months (36 par défaut)
+// Anti-doublon : on ne renvoie pas si une relance a déjà été envoyée depuis la dernière échéance.
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-
-    // En mode manuel ("Envoyer maintenant"), on relance tout ce qui est dû (≥ N mois),
-    // pas seulement les rendez-vous tombant pile au jour anniversaire.
-    let manual = false;
-    try {
-      const body = await req.json();
-      manual = body?.manual === true;
-    } catch (_e) { /* pas de corps */ }
 
     const settingsList = await base44.asServiceRole.entities.ReminderSettings.list();
     const settings = settingsList[0] || {};
 
     const ramonageOn = settings.followup_enabled;
+    const etancheiteOn = settings.etancheite_followup_enabled;
+
+    const ramonageMonths = settings.followup_months ?? 12;
+    const etancheiteMonths = settings.etancheite_followup_months ?? 36;
+
+    const result = {
+      ramonage: { sent: 0, candidates: 0 },
+      etancheite: { sent: 0, candidates: 0 },
+    };
+
+    if (!ramonageOn && !etancheiteOn) {
+      return Response.json({ ...result, skipped: 'all_disabled' });
+    }
 
     const clients = await base44.asServiceRole.entities.Client.list();
-    const appointments = await base44.asServiceRole.entities.Appointment.list();
     const { accessToken } = await base44.asServiceRole.connectors.getConnection('gmail');
     const authHeader = { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' };
     const today = new Date().toISOString().slice(0, 10);
 
-    const clientById = {};
-    for (const c of clients) clientById[c.id] = c;
+    for (const client of clients) {
+      if (!client.email) continue;
 
-    const months = settings.followup_months ?? 12;
+      // --- Ramonage ---
+      if (ramonageOn && isDue(client.last_ramonage_date, ramonageMonths)) {
+        // Anti-doublon : déjà relancé depuis le dernier ramonage ?
+        const alreadySent = client.followup_sent_date
+          && client.followup_sent_date >= client.last_ramonage_date;
+        if (!alreadySent) {
+          result.ramonage.candidates += 1;
+          const subject = applyVars(settings.followup_subject, {
+            '{{client}}': client.full_name || '',
+            '{{date_dernier_ramonage}}': formatFr(client.last_ramonage_date),
+          });
+          const html = applyVars(settings.followup_html, {
+            '{{client}}': client.full_name || '',
+            '{{date_dernier_ramonage}}': formatFr(client.last_ramonage_date),
+          });
+          if (await sendEmail(authHeader, { to: client.email, subject, html })) {
+            result.ramonage.sent += 1;
+            await base44.asServiceRole.entities.Client.update(client.id, { followup_sent_date: today });
+          }
+        }
+      }
 
-    const result = { ramonage: { sent: 0, candidates: 0 } };
-
-    if (!ramonageOn) {
-      return Response.json({ ...result, skipped: 'ramonage_disabled' });
-    }
-
-    // Parcourt les rendez-vous de type "ramonage" dont la date tombe exactement
-    // au jour anniversaire (il y a N mois). Email = client rattaché ou extrait des notes.
-    const seenEmails = new Set();
-    for (const appt of appointments) {
-      // "Ramonage" peut être dans le type d'intervention OU dans le titre du rendez-vous.
-      const haystack = `${appt.intervention_type || ''} ${appt.title || ''}`.toLowerCase();
-      if (!haystack.includes('ramonage')) continue;
-      if (!appt.start) continue;
-
-      const ramonageDate = appt.start.slice(0, 10);
-      const matches = manual ? isDue(ramonageDate, months) : isAnniversary(ramonageDate, months);
-      if (!matches) continue;
-
-      const client = appt.client_id ? clientById[appt.client_id] : null;
-      const email = client?.email || extractEmail(appt.notes);
-      if (!email) continue;
-
-      // Anti-doublon (même destinataire dans le même run)
-      if (seenEmails.has(email.toLowerCase())) continue;
-      seenEmails.add(email.toLowerCase());
-
-      result.ramonage.candidates += 1;
-
-      const subject = applyVars(settings.followup_subject, {
-        '{{client}}': client?.full_name || '',
-        '{client}': client?.full_name || '',
-        '{{date_dernier_ramonage}}': formatFr(ramonageDate),
-      });
-      const html = applyVars(settings.followup_html, {
-        '{{client}}': client?.full_name || '',
-        '{{date_dernier_ramonage}}': formatFr(ramonageDate),
-      });
-      const raw = buildMime({ to: email, subject, html });
-      const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
-        method: 'POST',
-        headers: authHeader,
-        body: JSON.stringify({ raw }),
-      });
-      if (res.ok) {
-        result.ramonage.sent += 1;
-        if (client) {
-          await base44.asServiceRole.entities.Client.update(client.id, { followup_sent_date: today });
+      // --- Test d'étanchéité ---
+      if (etancheiteOn && isDue(client.last_etancheite_date, etancheiteMonths)) {
+        const alreadySent = client.etancheite_followup_sent_date
+          && client.etancheite_followup_sent_date >= client.last_etancheite_date;
+        if (!alreadySent) {
+          result.etancheite.candidates += 1;
+          const subject = applyVars(settings.etancheite_followup_subject, {
+            '{{client}}': client.full_name || '',
+            '{{date_dernier_test}}': formatFr(client.last_etancheite_date),
+          });
+          const html = applyVars(settings.etancheite_followup_html, {
+            '{{client}}': client.full_name || '',
+            '{{date_dernier_test}}': formatFr(client.last_etancheite_date),
+          });
+          if (await sendEmail(authHeader, { to: client.email, subject, html })) {
+            result.etancheite.sent += 1;
+            await base44.asServiceRole.entities.Client.update(client.id, { etancheite_followup_sent_date: today });
+          }
         }
       }
     }

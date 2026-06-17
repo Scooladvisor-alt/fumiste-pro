@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { useClients, useRefreshData } from "@/hooks/useData";
 import ClientDialog from "@/components/clients/ClientDialog";
 import EditableCell from "@/components/clients/EditableCell";
-import FollowUpSection from "@/components/clients/FollowUpSection";
 import { exportClientsToCsv } from "@/lib/exportCsv";
 
 export default function Clients() {
@@ -54,8 +53,6 @@ export default function Clients() {
         </div>
       </div>
 
-      <FollowUpSection clients={clients} />
-
       <div className="flex flex-col min-h-0 flex-1 bg-card rounded-2xl border border-border">
         <div className="p-3 border-b border-border">
           <div className="relative">
@@ -82,6 +79,8 @@ export default function Clients() {
                   <th className="px-3 py-2.5 font-semibold">Téléphone</th>
                   <th className="px-3 py-2.5 font-semibold">Ville</th>
                   <th className="px-3 py-2.5 font-semibold">E-mail</th>
+                  <th className="px-3 py-2.5 font-semibold">Dernier ramonage</th>
+                  <th className="px-3 py-2.5 font-semibold">Dernier test étanchéité</th>
                   <th className="px-3 py-2.5 w-10" />
                 </tr>
               </thead>
@@ -99,6 +98,12 @@ export default function Clients() {
                     </td>
                     <td className="px-1.5 py-1 align-middle">
                       <EditableCell value={c.email} type="email" placeholder="E-mail…" onSave={(v) => updateField(c, "email", v)} />
+                    </td>
+                    <td className="px-1.5 py-1 align-middle">
+                      <EditableCell value={c.last_ramonage_date} type="date" placeholder="—" onSave={(v) => updateField(c, "last_ramonage_date", v)} />
+                    </td>
+                    <td className="px-1.5 py-1 align-middle">
+                      <EditableCell value={c.last_etancheite_date} type="date" placeholder="—" onSave={(v) => updateField(c, "last_etancheite_date", v)} />
                     </td>
                     <td className="px-1.5 py-1 align-middle text-right">
                       <Button
