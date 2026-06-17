@@ -28,10 +28,10 @@ export default function LandingNav() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" className="hidden sm:inline-flex text-slate-700" onClick={() => base44.auth.redirectToLogin()}>
+          <Button variant="ghost" className="hidden sm:inline-flex text-slate-700" onClick={() => base44.auth.redirectToLogin("/app")}>
             Connexion
           </Button>
-          <Button className="bg-blue-600 hover:bg-blue-700 rounded-xl" onClick={() => base44.auth.redirectToLogin()}>
+          <Button className="bg-blue-600 hover:bg-blue-700 rounded-xl" onClick={() => base44.auth.redirectToLogin("/app")}>
             Obtenir un accès
           </Button>
         </div>

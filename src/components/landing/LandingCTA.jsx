@@ -16,7 +16,7 @@ export default function LandingCTA() {
           <Button
             size="lg"
             className="mt-8 bg-white text-blue-700 hover:bg-blue-50 rounded-xl h-12 px-7 text-base"
-            onClick={() => base44.auth.redirectToLogin()}
+            onClick={() => base44.auth.redirectToLogin("/app")}
           >
             Obtenir un accès <ArrowRight className="w-4 h-4" />
           </Button>

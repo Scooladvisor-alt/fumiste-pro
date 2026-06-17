@@ -65,7 +65,7 @@ export default function LandingPricing() {
               </div>
               <Button
                 className={`w-full mt-5 rounded-xl ${p.highlight ? "bg-blue-600 hover:bg-blue-700" : "bg-slate-900 hover:bg-slate-800"}`}
-                onClick={() => base44.auth.redirectToLogin()}
+                onClick={() => base44.auth.redirectToLogin("/app")}
               >
                 Obtenir un accès
               </Button>
