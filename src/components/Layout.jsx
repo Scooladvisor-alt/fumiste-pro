@@ -6,7 +6,7 @@ import { ensureInterventionTypes } from "@/lib/seed";
 import { base44 } from "@/api/base44Client";
 
 const NAV = [
-  { to: "/", label: "Tableau de bord", icon: LayoutDashboard },
+  { to: "/app", label: "Tableau de bord", icon: LayoutDashboard },
   { to: "/clients", label: "Clients", icon: Users },
   { to: "/agenda", label: "Agenda", icon: Calendar },
   { to: "/parametres", label: "Réglages", icon: Settings },
@@ -20,14 +20,14 @@ export default function Layout() {
   }, []);
 
   const isActive = (to) =>
-    to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
+    to === "/app" ? location.pathname === "/app" : location.pathname.startsWith(to);
 
   return (
     <div className="h-screen bg-secondary/40 flex flex-col font-body">
       {/* Top bar */}
       <header className="shrink-0 bg-card/80 backdrop-blur-md border-b border-border/70 sticky top-0 z-20 shadow-sm">
         <div className="flex items-center gap-3 px-4 h-16 max-w-[120rem] mx-auto w-full">
-          <Link to="/" className="flex items-center gap-2.5 shrink-0 mr-2">
+          <Link to="/app" className="flex items-center gap-2.5 shrink-0 mr-2">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center shadow-md shadow-primary/20">
               <Flame className="w-[18px] h-[18px] text-primary-foreground" />
             </div>

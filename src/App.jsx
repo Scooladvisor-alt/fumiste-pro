@@ -47,7 +47,7 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <Routes>
-      <Route path="/landing" element={<Landing />} />
+      <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -56,7 +56,7 @@ const AuthenticatedApp = () => {
         <Route path="/onboarding" element={<Onboarding />} />
         <Route element={<AccessGuard />}>
           <Route element={<Layout />}>
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/app" element={<Dashboard />} />
             <Route path="/clients" element={<Clients />} />
             <Route path="/agenda" element={<Agenda />} />
             <Route path="/parametres" element={<Parametres />} />

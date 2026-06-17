@@ -74,7 +74,7 @@ export default function Onboarding() {
 
         <Button
           disabled={!allDone || isLoading}
-          onClick={() => navigate("/", { replace: true })}
+          onClick={() => navigate("/app", { replace: true })}
           className="w-full mt-8 h-11 rounded-xl bg-blue-600 hover:bg-blue-700"
         >
           Accéder à mon espace <ArrowRight className="w-4 h-4" />
