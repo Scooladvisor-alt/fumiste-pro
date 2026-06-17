@@ -54,7 +54,8 @@ export default function AppointmentDialog({
       titleEdited: !!base.title,
       notes: base.notes || "",
     });
-  }, [open, appointment, defaultStart, defaultEnd, types, clients]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, appointment, defaultStart, defaultEnd]);
 
   if (!form) return null;
 
