@@ -1,11 +1,8 @@
 import InterventionTypes from "@/components/settings/InterventionTypes";
 import GoogleSync from "@/components/settings/GoogleSync";
 import GmailConnect from "@/components/settings/GmailConnect";
-import ReminderSettings from "@/components/settings/ReminderSettings";
-import SmsReminderSettings from "@/components/settings/SmsReminderSettings";
-import GoogleReviewSettings from "@/components/settings/GoogleReviewSettings";
 import DailySendTime from "@/components/settings/DailySendTime";
-import MaintenanceFollowupSettings from "@/components/settings/MaintenanceFollowupSettings";
+import CommunicationSettings from "@/components/settings/CommunicationSettings";
 
 export default function Parametres() {
   return (
@@ -14,10 +11,7 @@ export default function Parametres() {
       <GoogleSync />
       <GmailConnect />
       <DailySendTime />
-      <ReminderSettings />
-      <SmsReminderSettings />
-      <GoogleReviewSettings />
-      <MaintenanceFollowupSettings />
+      <CommunicationSettings />
       <InterventionTypes />
     </div>
   );
