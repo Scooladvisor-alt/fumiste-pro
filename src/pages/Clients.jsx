@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useClients, useRefreshData } from "@/hooks/useData";
 import ClientDialog from "@/components/clients/ClientDialog";
 import EditableCell from "@/components/clients/EditableCell";
+import FollowupSentIcon from "@/components/clients/FollowupSentIcon";
 import { exportClientsToCsv } from "@/lib/exportCsv";
 
 export default function Clients() {
@@ -100,10 +101,16 @@ export default function Clients() {
                       <EditableCell value={c.email} type="email" placeholder="E-mail…" onSave={(v) => updateField(c, "email", v)} />
                     </td>
                     <td className="px-1.5 py-1 align-middle">
-                      <EditableCell value={c.last_ramonage_date} type="date" placeholder="—" onSave={(v) => updateField(c, "last_ramonage_date", v)} />
+                      <div className="flex items-center gap-1.5">
+                        <EditableCell value={c.last_ramonage_date} type="date" placeholder="—" onSave={(v) => updateField(c, "last_ramonage_date", v)} />
+                        <FollowupSentIcon interventionDate={c.last_ramonage_date} sentDate={c.followup_sent_date} />
+                      </div>
                     </td>
                     <td className="px-1.5 py-1 align-middle">
-                      <EditableCell value={c.last_etancheite_date} type="date" placeholder="—" onSave={(v) => updateField(c, "last_etancheite_date", v)} />
+                      <div className="flex items-center gap-1.5">
+                        <EditableCell value={c.last_etancheite_date} type="date" placeholder="—" onSave={(v) => updateField(c, "last_etancheite_date", v)} />
+                        <FollowupSentIcon interventionDate={c.last_etancheite_date} sentDate={c.etancheite_followup_sent_date} />
+                      </div>
                     </td>
                     <td className="px-1.5 py-1 align-middle text-right">
                       <Button
