@@ -41,6 +41,11 @@
     "google_review_link": {
       "type": "string",
       "description": "Lien vers la page d'avis Google de l'entreprise"
+    },
+    "daily_send_hour": {
+      "type": "number",
+      "description": "Heure (0-23, fuseau Europe/Paris) \u00e0 laquelle le logiciel envoie chaque jour les rappels et demandes d'avis",
+      "default": 9
     }
   },
   "required": []

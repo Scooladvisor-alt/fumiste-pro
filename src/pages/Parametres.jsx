@@ -4,6 +4,7 @@ import GmailConnect from "@/components/settings/GmailConnect";
 import ReminderSettings from "@/components/settings/ReminderSettings";
 import SmsReminderSettings from "@/components/settings/SmsReminderSettings";
 import GoogleReviewSettings from "@/components/settings/GoogleReviewSettings";
+import DailySendTime from "@/components/settings/DailySendTime";
 
 export default function Parametres() {
   return (
@@ -11,6 +12,7 @@ export default function Parametres() {
       <h1 className="font-display font-bold text-xl md:text-2xl mb-2">Réglages</h1>
       <GoogleSync />
       <GmailConnect />
+      <DailySendTime />
       <ReminderSettings />
       <SmsReminderSettings />
       <GoogleReviewSettings />

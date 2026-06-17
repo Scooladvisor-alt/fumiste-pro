@@ -21,6 +21,7 @@ const DEFAULTS = {
   review_subject: "Votre avis nous intéresse",
   review_html: DEFAULT_REVIEW_HTML,
   google_review_link: "",
+  daily_send_hour: 9,
 };
 
 // Charge l'unique enregistrement de réglages (en le créant si besoin)
