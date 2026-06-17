@@ -16,6 +16,7 @@ import Dashboard from '@/pages/Dashboard';
 import Clients from '@/pages/Clients';
 import Agenda from '@/pages/Agenda';
 import Parametres from '@/pages/Parametres';
+import Landing from '@/pages/Landing';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -44,6 +45,7 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <Routes>
+      <Route path="/landing" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
