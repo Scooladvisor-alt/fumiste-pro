@@ -13,7 +13,13 @@ const DEFAULT_REVIEW_HTML = `<p>Bonjour {{client}},</p>
 
 const DEFAULT_FOLLOWUP_HTML = `<p>Bonjour {{client}},</p>
 <p>Cela fait maintenant un an que nous avons effectué le ramonage de votre appareil (le {{date_dernier_ramonage}}).</p>
-<p>Pour votre sécurité et la conformité de votre installation, il est temps de planifier un nouvel entretien.</p>
+<p>Le ramonage est obligatoire chaque année. Pour votre sécurité et la conformité de votre installation, il est temps de planifier un nouveau ramonage.</p>
+<p>N'hésitez pas à nous contacter pour reprendre rendez-vous.</p>
+<p>À bientôt,<br/>L'équipe</p>`;
+
+const DEFAULT_ETANCHEITE_HTML = `<p>Bonjour {{client}},</p>
+<p>Cela fait maintenant trois ans que nous avons réalisé le test d'étanchéité de votre installation (le {{date_dernier_test}}).</p>
+<p>Le test d'étanchéité est obligatoire tous les 3 ans. Pour rester en conformité, il est temps de planifier un nouveau contrôle.</p>
 <p>N'hésitez pas à nous contacter pour reprendre rendez-vous.</p>
 <p>À bientôt,<br/>L'équipe</p>`;
 
@@ -30,8 +36,12 @@ const DEFAULTS = {
   daily_send_hour: 9,
   followup_enabled: false,
   followup_months: 12,
-  followup_subject: "Il est temps de penser à votre entretien",
+  followup_subject: "Il est temps de penser à votre ramonage annuel",
   followup_html: DEFAULT_FOLLOWUP_HTML,
+  etancheite_followup_enabled: false,
+  etancheite_followup_months: 36,
+  etancheite_followup_subject: "Votre test d'étanchéité triennal arrive à échéance",
+  etancheite_followup_html: DEFAULT_ETANCHEITE_HTML,
 };
 
 // Charge l'unique enregistrement de réglages (en le créant si besoin)

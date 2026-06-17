@@ -46,6 +46,42 @@
       "type": "number",
       "description": "Heure (0-23, fuseau Europe/Paris) \u00e0 laquelle le logiciel envoie chaque jour les rappels et demandes d'avis",
       "default": 9
+    },
+    "followup_enabled": {
+      "type": "boolean",
+      "description": "Activer l'envoi automatique des e-mails de relance ramonage (tous les ans)",
+      "default": false
+    },
+    "followup_months": {
+      "type": "number",
+      "description": "Nombre de mois apr\u00e8s le dernier ramonage pour envoyer la relance (12 = obligation annuelle)",
+      "default": 12
+    },
+    "followup_subject": {
+      "type": "string",
+      "description": "Objet de l'e-mail de relance ramonage"
+    },
+    "followup_html": {
+      "type": "string",
+      "description": "Corps HTML de l'e-mail de relance ramonage (avec variables)"
+    },
+    "etancheite_followup_enabled": {
+      "type": "boolean",
+      "description": "Activer l'envoi automatique des relances test d'\u00e9tanch\u00e9it\u00e9 (tous les 3 ans)",
+      "default": false
+    },
+    "etancheite_followup_months": {
+      "type": "number",
+      "description": "Nombre de mois apr\u00e8s le dernier test d'\u00e9tanch\u00e9it\u00e9 pour envoyer la relance (36 = obligation triennale)",
+      "default": 36
+    },
+    "etancheite_followup_subject": {
+      "type": "string",
+      "description": "Objet de l'e-mail de relance test d'\u00e9tanch\u00e9it\u00e9"
+    },
+    "etancheite_followup_html": {
+      "type": "string",
+      "description": "Corps HTML de l'e-mail de relance test d'\u00e9tanch\u00e9it\u00e9 (avec variables)"
     }
   },
   "required": []

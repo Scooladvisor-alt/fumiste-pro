@@ -21,6 +21,26 @@
     "notes": {
       "type": "string",
       "description": "Notes diverses"
+    },
+    "last_ramonage_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date du dernier ramonage effectu\u00e9 pour ce client (mise \u00e0 jour automatiquement depuis l'agenda)"
+    },
+    "last_etancheite_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date du dernier test d'\u00e9tanch\u00e9it\u00e9 effectu\u00e9 pour ce client (mise \u00e0 jour automatiquement depuis l'agenda)"
+    },
+    "followup_sent_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date du dernier e-mail de relance ramonage envoy\u00e9 (anti-doublon)"
+    },
+    "etancheite_followup_sent_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date du dernier e-mail de relance test d'\u00e9tanch\u00e9it\u00e9 envoy\u00e9 (anti-doublon)"
     }
   },
   "required": [

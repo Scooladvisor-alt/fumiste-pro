@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useClients, useRefreshData } from "@/hooks/useData";
 import ClientDialog from "@/components/clients/ClientDialog";
 import EditableCell from "@/components/clients/EditableCell";
+import FollowUpSection from "@/components/clients/FollowUpSection";
 import { exportClientsToCsv } from "@/lib/exportCsv";
 
 export default function Clients() {
@@ -52,6 +53,8 @@ export default function Clients() {
           </Button>
         </div>
       </div>
+
+      <FollowUpSection clients={clients} />
 
       <div className="flex flex-col min-h-0 flex-1 bg-card rounded-2xl border border-border">
         <div className="p-3 border-b border-border">
