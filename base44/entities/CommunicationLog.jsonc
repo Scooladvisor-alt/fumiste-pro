@@ -1,0 +1,47 @@
+{
+  "name": "CommunicationLog",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "rappel",
+        "avis",
+        "relance_ramonage",
+        "relance_etancheite",
+        "sms"
+      ],
+      "description": "Type de communication envoy\u00e9e"
+    },
+    "channel": {
+      "type": "string",
+      "enum": [
+        "email",
+        "sms"
+      ],
+      "default": "email",
+      "description": "Canal d'envoi"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "ID du client destinataire"
+    },
+    "client_name": {
+      "type": "string",
+      "description": "Nom du client (copie pour affichage)"
+    },
+    "to": {
+      "type": "string",
+      "description": "Destinataire (e-mail ou t\u00e9l\u00e9phone)"
+    },
+    "sent_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date d'envoi (YYYY-MM-DD, fuseau Europe/Paris)"
+    }
+  },
+  "required": [
+    "type",
+    "sent_date"
+  ]
+}

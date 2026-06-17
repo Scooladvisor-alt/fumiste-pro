@@ -17,6 +17,14 @@ export function useAppointments() {
   });
 }
 
+export function useCommunicationLogs() {
+  return useQuery({
+    queryKey: ["communicationLogs"],
+    queryFn: () => base44.entities.CommunicationLog.list("-sent_date", 2000),
+    initialData: [],
+  });
+}
+
 export function useInterventionTypes() {
   return useQuery({
     queryKey: ["interventionTypes"],

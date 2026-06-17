@@ -107,6 +107,14 @@ Deno.serve(async (req) => {
           if (await sendEmail(authHeader, { to: client.email, subject, html })) {
             result.ramonage.sent += 1;
             await base44.asServiceRole.entities.Client.update(client.id, { followup_sent_date: today });
+            await base44.asServiceRole.entities.CommunicationLog.create({
+              type: 'relance_ramonage',
+              channel: 'email',
+              client_id: client.id,
+              client_name: client.full_name || '',
+              to: client.email,
+              sent_date: today,
+            });
           }
         }
       }
@@ -128,6 +136,14 @@ Deno.serve(async (req) => {
           if (await sendEmail(authHeader, { to: client.email, subject, html })) {
             result.etancheite.sent += 1;
             await base44.asServiceRole.entities.Client.update(client.id, { etancheite_followup_sent_date: today });
+            await base44.asServiceRole.entities.CommunicationLog.create({
+              type: 'relance_etancheite',
+              channel: 'email',
+              client_id: client.id,
+              client_name: client.full_name || '',
+              to: client.email,
+              sent_date: today,
+            });
           }
         }
       }

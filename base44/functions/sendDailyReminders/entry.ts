@@ -100,8 +100,17 @@ Deno.serve(async (req) => {
         body: JSON.stringify({ raw }),
       });
 
-      if (res.ok) sent += 1;
-      else errors.push(await res.text());
+      if (res.ok) {
+        sent += 1;
+        await base44.asServiceRole.entities.CommunicationLog.create({
+          type: 'rappel',
+          channel: 'email',
+          client_id: appt.client_id || '',
+          client_name: client?.full_name || '',
+          to: email,
+          sent_date: new Date().toISOString().slice(0, 10),
+        });
+      } else errors.push(await res.text());
     }
 
     return Response.json({ targetDay, candidates: todays.length, sent, errors });
