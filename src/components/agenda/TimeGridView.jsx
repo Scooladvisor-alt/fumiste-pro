@@ -53,6 +53,7 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
   // Resize state (stretch/shrink an existing event)
   const [resizing, setResizing] = useState(null); // { id, startMin, endMin }
   const resizeRef = useRef(null); // { columnEl, appt, edge, startMin, endMin }
+  const justResizedRef = useRef(false); // ignore le clic qui suit un redimensionnement
 
   const handleResizeDown = (appt, edge, e) => {
     e.stopPropagation();
@@ -96,6 +97,8 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
     const newStart = dateFromMinutes(day, cur.startMin);
     const newEnd = dateFromMinutes(day, cur.endMin);
     if (cur.startMin !== r.startMin || cur.endMin !== r.endMin) {
+      // On a réellement redimensionné : on bloque le clic qui suit.
+      justResizedRef.current = true;
       onResizeEvent && onResizeEvent(r.appt.id, newStart, newEnd);
     }
   };
@@ -260,6 +263,10 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
                     }}
                     onClick={(e) => {
                       e.stopPropagation();
+                      if (justResizedRef.current) {
+                        justResizedRef.current = false;
+                        return;
+                      }
                       if (!isResizing) onSelectEvent(a);
                     }}
                     className="absolute left-1 right-1 z-10 rounded-lg px-2 py-1 text-left text-white overflow-hidden shadow-sm cursor-pointer group"
