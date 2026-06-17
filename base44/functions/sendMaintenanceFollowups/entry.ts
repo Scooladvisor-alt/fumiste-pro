@@ -34,12 +34,23 @@ function formatFr(dateStr) {
   return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
-// Une date "il y a N mois ou plus" (échue) ?
-function isDue(dateStr, months) {
+// Jour anniversaire exact : la date tombe-t-elle exactement N mois avant aujourd'hui
+// (même mois et même jour de calendrier) ?
+function isAnniversary(dateStr, months) {
   if (!dateStr) return false;
-  const threshold = new Date();
-  threshold.setMonth(threshold.getMonth() - months);
-  return new Date(dateStr) <= threshold;
+  const target = new Date();
+  target.setMonth(target.getMonth() - months);
+  const d = new Date(dateStr + 'T00:00:00Z');
+  return d.getUTCFullYear() === target.getUTCFullYear()
+    && d.getUTCMonth() === target.getUTCMonth()
+    && d.getUTCDate() === target.getUTCDate();
+}
+
+// Extrait la première adresse e-mail présente dans un texte (notes de l'événement).
+function extractEmail(text) {
+  if (!text) return null;
+  const m = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+  return m ? m[0] : null;
 }
 
 // Envoie les relances entretien : ramonage (annuel) et test d'étanchéité (triennal).
@@ -52,10 +63,6 @@ Deno.serve(async (req) => {
     const settings = settingsList[0] || {};
 
     const ramonageOn = settings.followup_enabled;
-    const etancheiteOn = settings.etancheite_followup_enabled;
-    if (!ramonageOn && !etancheiteOn) {
-      return Response.json({ skipped: true, reason: 'disabled' });
-    }
 
     const clients = await base44.asServiceRole.entities.Client.list();
     const appointments = await base44.asServiceRole.entities.Appointment.list();
@@ -63,84 +70,57 @@ Deno.serve(async (req) => {
     const authHeader = { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' };
     const today = new Date().toISOString().slice(0, 10);
 
-    // Calcule, par client, la dernière date (YYYY-MM-DD) de ramonage et de test d'étanchéité
-    // directement depuis les rendez-vous passés (plus fiable que le champ stocké sur le client).
-    const lastByClient = {};
-    for (const appt of appointments) {
-      if (!appt.client_id || !appt.start) continue;
-      const type = (appt.intervention_type || '').toLowerCase();
-      let key = null;
-      if (type.includes('ramonage')) key = 'ramonage';
-      else if (type.includes('étanch') || type.includes('etanch')) key = 'etancheite';
-      if (!key) continue;
-      const date = appt.start.slice(0, 10);
-      if (date > today) continue; // ignore les rendez-vous futurs
-      const entry = (lastByClient[appt.client_id] = lastByClient[appt.client_id] || {});
-      if (!entry[key] || date > entry[key]) entry[key] = date;
+    const clientById = {};
+    for (const c of clients) clientById[c.id] = c;
+
+    const months = settings.followup_months ?? 12;
+
+    const result = { ramonage: { sent: 0, candidates: 0 } };
+
+    if (!ramonageOn) {
+      return Response.json({ ...result, skipped: 'ramonage_disabled' });
     }
 
-    async function sendOne(client, subjectTpl, htmlTpl, vars) {
-      const email = client.email;
-      if (!email) return false;
-      const subject = applyVars(subjectTpl, vars);
-      const html = applyVars(htmlTpl, vars);
+    // Parcourt les rendez-vous de type "ramonage" dont la date tombe exactement
+    // au jour anniversaire (il y a N mois). Email = client rattaché ou extrait des notes.
+    const seenEmails = new Set();
+    for (const appt of appointments) {
+      const type = (appt.intervention_type || '').toLowerCase();
+      if (!type.includes('ramonage')) continue;
+      if (!appt.start) continue;
+
+      const ramonageDate = appt.start.slice(0, 10);
+      if (!isAnniversary(ramonageDate, months)) continue;
+
+      const client = appt.client_id ? clientById[appt.client_id] : null;
+      const email = client?.email || extractEmail(appt.notes);
+      if (!email) continue;
+
+      // Anti-doublon (même destinataire dans le même run)
+      if (seenEmails.has(email.toLowerCase())) continue;
+      seenEmails.add(email.toLowerCase());
+
+      result.ramonage.candidates += 1;
+
+      const subject = applyVars(settings.followup_subject, {
+        '{{client}}': client?.full_name || '',
+        '{client}': client?.full_name || '',
+        '{{date_dernier_ramonage}}': formatFr(ramonageDate),
+      });
+      const html = applyVars(settings.followup_html, {
+        '{{client}}': client?.full_name || '',
+        '{{date_dernier_ramonage}}': formatFr(ramonageDate),
+      });
       const raw = buildMime({ to: email, subject, html });
       const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
         method: 'POST',
         headers: authHeader,
         body: JSON.stringify({ raw }),
       });
-      return res.ok;
-    }
-
-    const result = { ramonage: { sent: 0, candidates: 0 }, etancheite: { sent: 0, candidates: 0 } };
-
-    for (const client of clients) {
-      const computed = lastByClient[client.id] || {};
-
-      // --- Ramonage (annuel) ---
-      if (ramonageOn) {
-        const months = settings.followup_months ?? 12;
-        // Date de référence : la plus récente entre le champ client et le calcul depuis les RDV.
-        const ramonageDate = [client.last_ramonage_date, computed.ramonage]
-          .filter(Boolean)
-          .sort()
-          .pop();
-        const due = isDue(ramonageDate, months);
-        // Anti-doublon : ne pas renvoyer si déjà relancé après le dernier ramonage
-        const alreadySent = client.followup_sent_date && client.followup_sent_date > ramonageDate;
-        if (due && !alreadySent) {
-          result.ramonage.candidates += 1;
-          const ok = await sendOne(client, settings.followup_subject, settings.followup_html, {
-            '{{client}}': client.full_name || '',
-            '{{date_dernier_ramonage}}': formatFr(ramonageDate),
-          });
-          if (ok) {
-            await base44.asServiceRole.entities.Client.update(client.id, { followup_sent_date: today });
-            result.ramonage.sent += 1;
-          }
-        }
-      }
-
-      // --- Test d'étanchéité (triennal) ---
-      if (etancheiteOn) {
-        const months = settings.etancheite_followup_months ?? 36;
-        const etancheiteDate = [client.last_etancheite_date, computed.etancheite]
-          .filter(Boolean)
-          .sort()
-          .pop();
-        const due = isDue(etancheiteDate, months);
-        const alreadySent = client.etancheite_followup_sent_date && client.etancheite_followup_sent_date > etancheiteDate;
-        if (due && !alreadySent) {
-          result.etancheite.candidates += 1;
-          const ok = await sendOne(client, settings.etancheite_followup_subject, settings.etancheite_followup_html, {
-            '{{client}}': client.full_name || '',
-            '{{date_dernier_test}}': formatFr(etancheiteDate),
-          });
-          if (ok) {
-            await base44.asServiceRole.entities.Client.update(client.id, { etancheite_followup_sent_date: today });
-            result.etancheite.sent += 1;
-          }
+      if (res.ok) {
+        result.ramonage.sent += 1;
+        if (client) {
+          await base44.asServiceRole.entities.Client.update(client.id, { followup_sent_date: today });
         }
       }
     }
