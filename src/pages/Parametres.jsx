@@ -1,7 +1,7 @@
 import InterventionTypes from "@/components/settings/InterventionTypes";
 import GoogleSync from "@/components/settings/GoogleSync";
 import GmailConnect from "@/components/settings/GmailConnect";
-import DailySendTime from "@/components/settings/DailySendTime";
+import SendEmailsNow from "@/components/settings/SendEmailsNow";
 import CommunicationSettings from "@/components/settings/CommunicationSettings";
 
 export default function Parametres() {
@@ -10,7 +10,7 @@ export default function Parametres() {
       <h1 className="font-display font-bold text-xl md:text-2xl mb-2">Réglages</h1>
       <GoogleSync />
       <GmailConnect />
-      <DailySendTime />
+      <SendEmailsNow />
       <CommunicationSettings />
       <InterventionTypes />
     </div>

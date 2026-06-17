@@ -1,0 +1,208 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+
+const GMAIL_CONNECTOR_ID = '6a32cc1aff5b6c91aa8e022a';
+
+function encodeRFC2047(str) {
+  return `=?UTF-8?B?${btoa(unescape(encodeURIComponent(str)))}?=`;
+}
+
+function buildMime({ to, subject, html }) {
+  const lines = [
+    `To: ${to}`,
+    `Subject: ${encodeRFC2047(subject)}`,
+    'MIME-Version: 1.0',
+    'Content-Type: text/html; charset="UTF-8"',
+    'Content-Transfer-Encoding: base64',
+    '',
+    btoa(unescape(encodeURIComponent(html))),
+  ];
+  const raw = lines.join('\r\n');
+  return btoa(unescape(encodeURIComponent(raw)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+function applyVars(template, vars) {
+  let out = template || '';
+  Object.entries(vars).forEach(([token, value]) => {
+    out = out.split(token).join(value ?? '');
+  });
+  return out;
+}
+
+function extractEmail(text) {
+  const m = (text || '').match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+  return m ? m[0] : null;
+}
+
+function formatFr(dateStr) {
+  if (!dateStr) return '';
+  return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function dayOffset(days) {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+function isDue(dateStr, months) {
+  if (!dateStr) return false;
+  const threshold = new Date();
+  threshold.setMonth(threshold.getMonth() - months);
+  threshold.setUTCHours(0, 0, 0, 0);
+  const d = new Date(dateStr + 'T00:00:00Z');
+  return d.getTime() <= threshold.getTime();
+}
+
+// Envoi MANUEL : déclenché par l'utilisateur depuis l'app.
+// Utilise le Gmail de l'utilisateur connecté et ne traite QUE ses propres données (RLS).
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Connexion Gmail de l'utilisateur courant
+    let accessToken;
+    try {
+      const conn = await base44.asServiceRole.connectors.getCurrentAppUserConnection(GMAIL_CONNECTOR_ID);
+      accessToken = conn?.accessToken;
+    } catch {
+      accessToken = null;
+    }
+    if (!accessToken) {
+      return Response.json({ error: 'gmail_not_connected' }, { status: 400 });
+    }
+    const authHeader = { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' };
+
+    // Données de l'utilisateur (RLS : filtrées sur created_by_id)
+    const settingsList = await base44.asServiceRole.entities.ReminderSettings.filter({ created_by_id: user.id });
+    const settings = settingsList[0] || {};
+    const appointments = await base44.entities.Appointment.list();
+    const clients = await base44.entities.Client.list();
+    const clientMap = {};
+    clients.forEach((c) => { clientMap[c.id] = c; });
+
+    const today = new Date().toISOString().slice(0, 10);
+
+    async function sendEmail({ to, subject, html }) {
+      const raw = buildMime({ to, subject, html });
+      const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+        method: 'POST',
+        headers: authHeader,
+        body: JSON.stringify({ raw }),
+      });
+      return res.ok;
+    }
+
+    async function sendBatch({ targetDay, subjectTpl, htmlTpl, logType, extraVars = {} }) {
+      const targets = appointments.filter((a) => a.start && a.start.slice(0, 10) === targetDay);
+      let sent = 0;
+      for (const appt of targets) {
+        const client = clientMap[appt.client_id];
+        const email = extractEmail(appt.notes || appt.description);
+        if (!email) continue;
+        const dt = new Date(appt.start);
+        const vars = {
+          '{{client}}': client?.full_name || '',
+          '{{date}}': dt.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
+          '{{heure}}': dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+          '{{type}}': appt.intervention_type || '',
+          ...extraVars,
+        };
+        const subject = applyVars(subjectTpl, vars);
+        const html = applyVars(htmlTpl, vars);
+        if (await sendEmail({ to: email, subject, html })) {
+          sent += 1;
+          await base44.entities.CommunicationLog.create({
+            type: logType,
+            channel: 'email',
+            client_id: appt.client_id || '',
+            client_name: client?.full_name || '',
+            to: email,
+            sent_date: today,
+          });
+        }
+      }
+      return { candidates: targets.length, sent };
+    }
+
+    const result = { reminders: { candidates: 0, sent: 0 }, reviews: { candidates: 0, sent: 0 }, ramonage: { candidates: 0, sent: 0 }, etancheite: { candidates: 0, sent: 0 } };
+
+    // Rappels d'intervention (J - days_before)
+    if (settings.enabled !== false) {
+      const daysBefore = settings.days_before ?? 2;
+      result.reminders = await sendBatch({
+        targetDay: dayOffset(daysBefore),
+        subjectTpl: settings.reminder_subject || 'Rappel : votre intervention approche',
+        htmlTpl: settings.reminder_html || '<p>Bonjour {{client}}, rappel de votre intervention {{type}} le {{date}} à {{heure}}.</p>',
+        logType: 'rappel',
+      });
+    }
+
+    // Demandes d'avis Google (J + review_days_after)
+    if (settings.review_enabled) {
+      const daysAfter = settings.review_days_after ?? 1;
+      result.reviews = await sendBatch({
+        targetDay: dayOffset(-daysAfter),
+        subjectTpl: settings.review_subject || 'Votre avis nous intéresse',
+        htmlTpl: settings.review_html || '<p>Bonjour {{client}}, <a href="{{lien_avis}}">laissez un avis</a>.</p>',
+        logType: 'avis',
+        extraVars: { '{{lien_avis}}': settings.google_review_link || '' },
+      });
+    }
+
+    // Relances entretien (ramonage annuel / étanchéité triennale) basées sur les colonnes client
+    const ramonageMonths = settings.followup_months ?? 12;
+    const etancheiteMonths = settings.etancheite_followup_months ?? 36;
+
+    for (const client of clients) {
+      if (!client.email) continue;
+
+      if (settings.followup_enabled && isDue(client.last_ramonage_date, ramonageMonths)) {
+        const alreadySent = client.followup_sent_date && client.followup_sent_date >= client.last_ramonage_date;
+        if (!alreadySent) {
+          result.ramonage.candidates += 1;
+          const v = { '{{client}}': client.full_name || '', '{{date_dernier_ramonage}}': formatFr(client.last_ramonage_date) };
+          const subject = applyVars(settings.followup_subject, v);
+          const html = applyVars(settings.followup_html, v);
+          if (await sendEmail({ to: client.email, subject, html })) {
+            result.ramonage.sent += 1;
+            await base44.entities.Client.update(client.id, { followup_sent_date: today });
+            await base44.entities.CommunicationLog.create({
+              type: 'relance_ramonage', channel: 'email', client_id: client.id,
+              client_name: client.full_name || '', to: client.email, sent_date: today,
+            });
+          }
+        }
+      }
+
+      if (settings.etancheite_followup_enabled && isDue(client.last_etancheite_date, etancheiteMonths)) {
+        const alreadySent = client.etancheite_followup_sent_date && client.etancheite_followup_sent_date >= client.last_etancheite_date;
+        if (!alreadySent) {
+          result.etancheite.candidates += 1;
+          const v = { '{{client}}': client.full_name || '', '{{date_dernier_test}}': formatFr(client.last_etancheite_date) };
+          const subject = applyVars(settings.etancheite_followup_subject, v);
+          const html = applyVars(settings.etancheite_followup_html, v);
+          if (await sendEmail({ to: client.email, subject, html })) {
+            result.etancheite.sent += 1;
+            await base44.entities.Client.update(client.id, { etancheite_followup_sent_date: today });
+            await base44.entities.CommunicationLog.create({
+              type: 'relance_etancheite', channel: 'email', client_id: client.id,
+              client_name: client.full_name || '', to: client.email, sent_date: today,
+            });
+          }
+        }
+      }
+    }
+
+    const totalSent = result.reminders.sent + result.reviews.sent + result.ramonage.sent + result.etancheite.sent;
+    return Response.json({ ok: true, totalSent, ...result });
+  } catch (error) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+});
