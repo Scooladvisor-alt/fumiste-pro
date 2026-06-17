@@ -5,6 +5,7 @@ import ReminderSettings from "@/components/settings/ReminderSettings";
 import SmsReminderSettings from "@/components/settings/SmsReminderSettings";
 import GoogleReviewSettings from "@/components/settings/GoogleReviewSettings";
 import DailySendTime from "@/components/settings/DailySendTime";
+import MaintenanceFollowupSettings from "@/components/settings/MaintenanceFollowupSettings";
 
 export default function Parametres() {
   return (
@@ -16,6 +17,7 @@ export default function Parametres() {
       <ReminderSettings />
       <SmsReminderSettings />
       <GoogleReviewSettings />
+      <MaintenanceFollowupSettings />
       <InterventionTypes />
     </div>
   );

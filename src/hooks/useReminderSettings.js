@@ -11,6 +11,12 @@ const DEFAULT_REVIEW_HTML = `<p>Bonjour {{client}},</p>
 <p><a href="{{lien_avis}}" style="display:inline-block;padding:10px 18px;background:#3b82f6;color:#fff;text-decoration:none;border-radius:8px;">Laisser un avis Google</a></p>
 <p>Merci !</p>`;
 
+const DEFAULT_FOLLOWUP_HTML = `<p>Bonjour {{client}},</p>
+<p>Cela fait maintenant un an que nous avons effectué le ramonage de votre appareil (le {{date_dernier_ramonage}}).</p>
+<p>Pour votre sécurité et la conformité de votre installation, il est temps de planifier un nouvel entretien.</p>
+<p>N'hésitez pas à nous contacter pour reprendre rendez-vous.</p>
+<p>À bientôt,<br/>L'équipe</p>`;
+
 const DEFAULTS = {
   enabled: true,
   days_before: 2,
@@ -22,6 +28,10 @@ const DEFAULTS = {
   review_html: DEFAULT_REVIEW_HTML,
   google_review_link: "",
   daily_send_hour: 9,
+  followup_enabled: false,
+  followup_months: 12,
+  followup_subject: "Il est temps de penser à votre entretien",
+  followup_html: DEFAULT_FOLLOWUP_HTML,
 };
 
 // Charge l'unique enregistrement de réglages (en le créant si besoin)

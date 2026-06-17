@@ -10,6 +10,7 @@ import {
 } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import EventBadges from "./EventBadges";
 
 const DAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
@@ -75,10 +76,13 @@ export default function MonthView({ date, appointments, onSelectSlot, onSelectEv
                       e.stopPropagation();
                       onSelectEvent(a);
                     }}
-                    className="w-full text-left text-[11px] leading-tight px-1.5 py-1 rounded-md truncate text-white font-medium"
+                    className="w-full text-left text-[11px] leading-tight px-1.5 py-1 rounded-md text-white font-medium"
                     style={{ backgroundColor: a.color || "#3b82f6" }}
                   >
-                    {format(new Date(a.start), "HH:mm")} {a.title}
+                    <span className="truncate block">
+                      {format(new Date(a.start), "HH:mm")} {a.title}
+                    </span>
+                    <EventBadges appointment={a} className="mt-0.5" />
                   </button>
                 ))}
                 {eventsFor(day).length > 3 && (

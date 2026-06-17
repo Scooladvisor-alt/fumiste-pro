@@ -2,6 +2,7 @@ import { useMemo, useState, useRef } from "react";
 import { startOfWeek, addDays, isSameDay, format, differenceInMinutes } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import EventBadges from "./EventBadges";
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i); // 0h -> 23h
 const HOUR_HEIGHT = 56;
@@ -190,6 +191,7 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
                   <p className="text-[10px] opacity-90">
                     {format(new Date(a.start), "HH:mm")} - {format(new Date(a.end), "HH:mm")}
                   </p>
+                  <EventBadges appointment={a} className="mt-0.5" />
                 </button>
               ))}
             </div>
