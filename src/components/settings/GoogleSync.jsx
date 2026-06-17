@@ -3,6 +3,8 @@ import { Calendar, CheckCircle2, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 
+const CALENDAR_CONNECTOR_ID = "6a32cbfde2927ef1458ec237";
+
 export default function GoogleSync() {
   const [status, setStatus] = useState("loading"); // loading | connected | disconnected
   const [connecting, setConnecting] = useState(false);
@@ -22,11 +24,20 @@ export default function GoogleSync() {
 
   const connect = async () => {
     setConnecting(true);
-    await base44.connectors.authorize("googlecalendar", {
-      scopes: ["https://www.googleapis.com/auth/calendar.events", "email"],
-    });
-    await check();
-    setConnecting(false);
+    const url = await base44.connectors.connectAppUser(CALENDAR_CONNECTOR_ID);
+    const popup = window.open(url, "_blank");
+    const timer = setInterval(() => {
+      if (!popup || popup.closed) {
+        clearInterval(timer);
+        check();
+        setConnecting(false);
+      }
+    }, 500);
+  };
+
+  const disconnect = async () => {
+    await base44.connectors.disconnectAppUser(CALENDAR_CONNECTOR_ID);
+    setStatus("disconnected");
   };
 
   return (
@@ -48,9 +59,14 @@ export default function GoogleSync() {
           Vérification…
         </div>
       ) : status === "connected" ? (
-        <div className="inline-flex items-center gap-2 text-sm font-medium text-emerald-600 bg-emerald-50 rounded-lg px-3 py-2">
-          <CheckCircle2 className="w-4 h-4" />
-          Connecté et synchronisé
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="inline-flex items-center gap-2 text-sm font-medium text-emerald-600 bg-emerald-50 rounded-lg px-3 py-2">
+            <CheckCircle2 className="w-4 h-4" />
+            Connecté et synchronisé
+          </div>
+          <Button variant="ghost" size="sm" onClick={disconnect} className="text-muted-foreground">
+            Déconnecter
+          </Button>
         </div>
       ) : (
         <Button onClick={connect} disabled={connecting} className="gap-2">

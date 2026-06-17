@@ -1,5 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
+const CALENDAR_CONNECTOR_ID = '6a32cbfde2927ef1458ec237';
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -9,7 +11,7 @@ Deno.serve(async (req) => {
     }
 
     try {
-      const conn = await base44.asServiceRole.connectors.getConnection('googlecalendar');
+      const conn = await base44.asServiceRole.connectors.getCurrentAppUserConnection(CALENDAR_CONNECTOR_ID);
       const connected = !!conn?.accessToken;
       return Response.json({ connected });
     } catch {

@@ -3,6 +3,8 @@ import { Mail, CheckCircle2, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 
+const GMAIL_CONNECTOR_ID = "6a32cc1aff5b6c91aa8e022a";
+
 export default function GmailConnect() {
   const [status, setStatus] = useState("loading"); // loading | connected | disconnected
   const [connecting, setConnecting] = useState(false);
@@ -22,11 +24,20 @@ export default function GmailConnect() {
 
   const connect = async () => {
     setConnecting(true);
-    await base44.connectors.authorize("gmail", {
-      scopes: ["https://www.googleapis.com/auth/gmail.send", "email"],
-    });
-    await check();
-    setConnecting(false);
+    const url = await base44.connectors.connectAppUser(GMAIL_CONNECTOR_ID);
+    const popup = window.open(url, "_blank");
+    const timer = setInterval(() => {
+      if (!popup || popup.closed) {
+        clearInterval(timer);
+        check();
+        setConnecting(false);
+      }
+    }, 500);
+  };
+
+  const disconnect = async () => {
+    await base44.connectors.disconnectAppUser(GMAIL_CONNECTOR_ID);
+    setStatus("disconnected");
   };
 
   return (
@@ -48,9 +59,14 @@ export default function GmailConnect() {
           Vérification…
         </div>
       ) : status === "connected" ? (
-        <div className="inline-flex items-center gap-2 text-sm font-medium text-emerald-600 bg-emerald-50 rounded-lg px-3 py-2">
-          <CheckCircle2 className="w-4 h-4" />
-          Connecté
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="inline-flex items-center gap-2 text-sm font-medium text-emerald-600 bg-emerald-50 rounded-lg px-3 py-2">
+            <CheckCircle2 className="w-4 h-4" />
+            Connecté
+          </div>
+          <Button variant="ghost" size="sm" onClick={disconnect} className="text-muted-foreground">
+            Déconnecter
+          </Button>
         </div>
       ) : (
         <Button onClick={connect} disabled={connecting} className="gap-2">
