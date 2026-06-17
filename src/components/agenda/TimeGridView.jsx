@@ -36,7 +36,7 @@ function dateFromMinutes(day, minutes) {
   return d;
 }
 
-export default function TimeGridView({ date, mode, appointments, onSelectSlot, onSelectEvent, onDropEvent }) {
+export default function TimeGridView({ date, mode, appointments, onSelectSlot, onSelectEvent, onDropEvent, onResizeEvent }) {
   const days = useMemo(() => {
     if (mode === "day") return [date];
     const start = startOfWeek(date, { weekStartsOn: 1 });
@@ -50,7 +50,54 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
   const [draft, setDraft] = useState(null); // { dayKey, startMin, endMin }
   const dragRef = useRef(null); // { columnEl, day, startMin, moved }
 
+  // Resize state (stretch/shrink an existing event)
+  const [resizing, setResizing] = useState(null); // { id, startMin, endMin }
+  const resizeRef = useRef(null); // { columnEl, appt, edge, startMin, endMin }
+
+  const handleResizeDown = (appt, edge, e) => {
+    e.stopPropagation();
+    if (e.button !== 0) return;
+    const columnEl = e.currentTarget.closest("[data-day-column]");
+    if (!columnEl) return;
+    const start = new Date(appt.start);
+    const end = new Date(appt.end);
+    const startMin = start.getHours() * 60 + start.getMinutes();
+    const endMin = end.getHours() * 60 + end.getMinutes();
+    resizeRef.current = { columnEl, appt, edge, startMin, endMin };
+    columnEl.setPointerCapture(e.pointerId);
+    setResizing({ id: appt.id, startMin, endMin });
+  };
+
+  const handleResizeMove = (e) => {
+    const r = resizeRef.current;
+    if (!r) return;
+    const cur = yToMinutes(e.clientY, r.columnEl);
+    if (r.edge === "top") {
+      const startMin = Math.min(cur, r.endMin - SNAP_MIN);
+      setResizing({ id: r.appt.id, startMin, endMin: r.endMin });
+    } else {
+      const endMin = Math.max(cur, r.startMin + SNAP_MIN);
+      setResizing({ id: r.appt.id, startMin: r.startMin, endMin });
+    }
+  };
+
+  const handleResizeUp = () => {
+    const r = resizeRef.current;
+    resizeRef.current = null;
+    if (!r) return;
+    const cur = resizing;
+    setResizing(null);
+    if (!cur) return;
+    const day = new Date(r.appt.start);
+    const newStart = dateFromMinutes(day, cur.startMin);
+    const newEnd = dateFromMinutes(day, cur.endMin);
+    if (cur.startMin !== r.startMin || cur.endMin !== r.endMin) {
+      onResizeEvent && onResizeEvent(r.appt.id, newStart, newEnd);
+    }
+  };
+
   const handlePointerDown = (day, e) => {
+    if (resizeRef.current) return;
     if (e.button !== 0) return;
     const columnEl = e.currentTarget;
     const startMin = yToMinutes(e.clientY, columnEl);
@@ -133,11 +180,18 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
           return (
             <div
               key={day.toISOString()}
+              data-day-column
               className="flex-1 relative border-l border-border select-none touch-none"
               style={{ height: HOUR_HEIGHT * 24 }}
               onPointerDown={(e) => handlePointerDown(day, e)}
-              onPointerMove={handlePointerMove}
-              onPointerUp={handlePointerUp}
+              onPointerMove={(e) => {
+                handleResizeMove(e);
+                handlePointerMove(e);
+              }}
+              onPointerUp={(e) => {
+                handleResizeUp(e);
+                handlePointerUp(e);
+              }}
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => handleDrop(day, e)}
             >
@@ -174,26 +228,53 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
                 </div>
               )}
 
-              {dayEvents.map((a) => (
-                <button
-                  key={a.id}
-                  draggable
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onDragStart={(e) => e.dataTransfer.setData("text/plain", a.id)}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSelectEvent(a);
-                  }}
-                  className="absolute left-1 right-1 z-10 rounded-lg px-2 py-1 text-left text-white overflow-hidden shadow-sm"
-                  style={{ ...eventStyle(a), backgroundColor: a.color || "#3b82f6" }}
-                >
-                  <p className="text-[11px] font-semibold leading-tight truncate">{a.title}</p>
-                  <p className="text-[10px] opacity-90">
-                    {format(new Date(a.start), "HH:mm")} - {format(new Date(a.end), "HH:mm")}
-                  </p>
-                  <EventBadges appointment={a} className="mt-0.5" />
-                </button>
-              ))}
+              {dayEvents.map((a) => {
+                const isResizing = resizing && resizing.id === a.id;
+                const style = isResizing
+                  ? {
+                      top: `${minutesToTop(resizing.startMin)}px`,
+                      height: `${Math.max(24, (resizing.endMin - resizing.startMin) * (HOUR_HEIGHT / 60))}px`,
+                    }
+                  : eventStyle(a);
+                const startLabel = isResizing
+                  ? `${String(Math.floor(resizing.startMin / 60)).padStart(2, "0")}:${String(resizing.startMin % 60).padStart(2, "0")}`
+                  : format(new Date(a.start), "HH:mm");
+                const endLabel = isResizing
+                  ? `${String(Math.floor(resizing.endMin / 60)).padStart(2, "0")}:${String(resizing.endMin % 60).padStart(2, "0")}`
+                  : format(new Date(a.end), "HH:mm");
+                return (
+                  <div
+                    key={a.id}
+                    draggable={!isResizing}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onDragStart={(e) => e.dataTransfer.setData("text/plain", a.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!isResizing) onSelectEvent(a);
+                    }}
+                    className="absolute left-1 right-1 z-10 rounded-lg px-2 py-1 text-left text-white overflow-hidden shadow-sm cursor-pointer group"
+                    style={{ ...style, backgroundColor: a.color || "#3b82f6" }}
+                  >
+                    <div
+                      onPointerDown={(e) => handleResizeDown(a, "top", e)}
+                      className="absolute top-0 left-0 right-0 h-2 cursor-ns-resize z-20"
+                    >
+                      <div className="mx-auto mt-0.5 w-6 h-1 rounded-full bg-white/60 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                    <p className="text-[11px] font-semibold leading-tight truncate">{a.title}</p>
+                    <p className="text-[10px] opacity-90">
+                      {startLabel} - {endLabel}
+                    </p>
+                    <EventBadges appointment={a} className="mt-0.5" />
+                    <div
+                      onPointerDown={(e) => handleResizeDown(a, "bottom", e)}
+                      className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize z-20"
+                    >
+                      <div className="mx-auto mb-0.5 w-6 h-1 rounded-full bg-white/60 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           );
         })}

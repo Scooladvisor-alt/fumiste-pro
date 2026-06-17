@@ -75,6 +75,14 @@ export default function Agenda() {
     refresh();
   };
 
+  const resizeEvent = async (id, newStart, newEnd) => {
+    await base44.entities.Appointment.update(id, {
+      start: newStart.toISOString(),
+      end: newEnd.toISOString(),
+    });
+    refresh();
+  };
+
   const moveEventToDay = async (id, day) => {
     const appt = appointments.find((a) => a.id === id);
     if (!appt) return;
@@ -160,6 +168,7 @@ export default function Agenda() {
             onSelectSlot={openNew}
             onSelectEvent={openEdit}
             onDropEvent={moveEvent}
+            onResizeEvent={resizeEvent}
           />
         )}
       </div>

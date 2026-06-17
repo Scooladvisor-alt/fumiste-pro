@@ -61,6 +61,30 @@ export default function AppointmentDialog({
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
+  // Format an ISO date into the value expected by <input type="datetime-local">
+  const toLocalInput = (iso) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  // When the start changes, keep the same duration by shifting the end
+  const setStart = (val) => {
+    if (!val) return;
+    const newStart = new Date(val);
+    setForm((f) => {
+      const duration = new Date(f.end).getTime() - new Date(f.start).getTime();
+      const safe = duration > 0 ? duration : 60 * 60 * 1000;
+      return { ...f, start: newStart.toISOString(), end: new Date(newStart.getTime() + safe).toISOString() };
+    });
+  };
+
+  const setEnd = (val) => {
+    if (!val) return;
+    setForm((f) => ({ ...f, end: new Date(val).toISOString() }));
+  };
+
   // Build the auto contact block injected at the top of the description
   const buildContactBlock = (client) => {
     if (!client) return "";
@@ -150,6 +174,27 @@ export default function AppointmentDialog({
               placeholder="Titre du rendez-vous"
               className="h-11"
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Début</Label>
+              <Input
+                type="datetime-local"
+                value={toLocalInput(form.start)}
+                onChange={(e) => setStart(e.target.value)}
+                className="h-11"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Fin</Label>
+              <Input
+                type="datetime-local"
+                value={toLocalInput(form.end)}
+                onChange={(e) => setEnd(e.target.value)}
+                className="h-11"
+              />
+            </div>
           </div>
 
           <div className="space-y-1.5">
