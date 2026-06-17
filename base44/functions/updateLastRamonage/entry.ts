@@ -12,12 +12,13 @@ Deno.serve(async (req) => {
       return Response.json({ skipped: true, reason: 'no_client_or_start' });
     }
 
-    const type = (appt.intervention_type || '').toLowerCase();
+    // "Ramonage" / "étanchéité" peut être dans le type d'intervention OU dans le titre.
+    const haystack = `${appt.intervention_type || ''} ${appt.title || ''}`.toLowerCase();
     const date = appt.start.slice(0, 10);
 
     let field = null;
-    if (type.includes('ramonage')) field = 'last_ramonage_date';
-    else if (type.includes('étanch') || type.includes('etanch')) field = 'last_etancheite_date';
+    if (haystack.includes('ramonage')) field = 'last_ramonage_date';
+    else if (haystack.includes('étanch') || haystack.includes('etanch')) field = 'last_etancheite_date';
 
     if (!field) return Response.json({ skipped: true, reason: 'type_not_tracked' });
 
