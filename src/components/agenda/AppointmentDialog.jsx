@@ -71,8 +71,8 @@ export default function AppointmentDialog({
   };
 
   // When selecting a client: auto-fill title AND prepend phone + email to the description
-  const setClient = (v) => {
-    const client = clients.find((c) => c.id === v);
+  const setClient = (v, createdClient) => {
+    const client = createdClient || clients.find((c) => c.id === v);
     setForm((f) => ({
       ...f,
       client_id: v,

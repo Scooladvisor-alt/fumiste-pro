@@ -47,7 +47,7 @@ export default function NewClientForm({ initialName = "", onCreated, onBack }) {
     });
     await refresh();
     setSaving(false);
-    onCreated(created.id);
+    onCreated(created);
   };
 
   return (

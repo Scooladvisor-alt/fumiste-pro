@@ -24,8 +24,8 @@ export default function ClientSelect({ clients, value, onChange }) {
     setSearch("");
   };
 
-  const handleCreated = (id) => {
-    onChange(id);
+  const handleCreated = (client) => {
+    onChange(client.id, client);
     setOpen(false);
     reset();
   };
