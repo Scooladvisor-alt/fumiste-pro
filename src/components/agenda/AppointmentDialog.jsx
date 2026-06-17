@@ -61,18 +61,29 @@ export default function AppointmentDialog({
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  // Format an ISO date into the value expected by <input type="datetime-local">
-  const toLocalInput = (iso) => {
+  const pad = (n) => String(n).padStart(2, "0");
+  const toDateInput = (iso) => {
     if (!iso) return "";
     const d = new Date(iso);
-    const pad = (n) => String(n).padStart(2, "0");
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  };
+  const toTimeInput = (iso) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  // Merge a date string (YYYY-MM-DD) and time string (HH:mm) into a Date
+  const mergeDateTime = (iso, datePart, timePart) => {
+    const base = iso ? new Date(iso) : new Date();
+    const date = datePart || toDateInput(base.toISOString());
+    const time = timePart || toTimeInput(base.toISOString());
+    return new Date(`${date}T${time}`);
   };
 
   // When the start changes, keep the same duration by shifting the end
-  const setStart = (val) => {
-    if (!val) return;
-    const newStart = new Date(val);
+  const setStart = (newStart) => {
+    if (isNaN(newStart?.getTime())) return;
     setForm((f) => {
       const duration = new Date(f.end).getTime() - new Date(f.start).getTime();
       const safe = duration > 0 ? duration : 60 * 60 * 1000;
@@ -80,9 +91,9 @@ export default function AppointmentDialog({
     });
   };
 
-  const setEnd = (val) => {
-    if (!val) return;
-    setForm((f) => ({ ...f, end: new Date(val).toISOString() }));
+  const setEnd = (newEnd) => {
+    if (isNaN(newEnd?.getTime())) return;
+    setForm((f) => ({ ...f, end: newEnd.toISOString() }));
   };
 
   // Build the auto contact block injected at the top of the description
@@ -167,37 +178,6 @@ export default function AppointmentDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label>Titre</Label>
-            <Input
-              value={form.title}
-              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value, titleEdited: true }))}
-              placeholder="Titre du rendez-vous"
-              className="h-11"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>Début</Label>
-              <Input
-                type="datetime-local"
-                value={toLocalInput(form.start)}
-                onChange={(e) => setStart(e.target.value)}
-                className="h-11"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Fin</Label>
-              <Input
-                type="datetime-local"
-                value={toLocalInput(form.end)}
-                onChange={(e) => setEnd(e.target.value)}
-                className="h-11"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
             <Label>Type d'intervention</Label>
             <Select
               value={form.intervention_type}
@@ -220,6 +200,53 @@ export default function AppointmentDialog({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Titre</Label>
+            <Input
+              value={form.title}
+              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value, titleEdited: true }))}
+              placeholder="Titre du rendez-vous"
+              className="h-11"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Début</Label>
+              <div className="flex gap-2">
+                <Input
+                  type="date"
+                  value={toDateInput(form.start)}
+                  onChange={(e) => setStart(mergeDateTime(form.start, e.target.value, null))}
+                  className="h-11 font-bold flex-1"
+                />
+                <Input
+                  type="time"
+                  value={toTimeInput(form.start)}
+                  onChange={(e) => setStart(mergeDateTime(form.start, null, e.target.value))}
+                  className="h-11 w-24"
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Fin</Label>
+              <div className="flex gap-2">
+                <Input
+                  type="date"
+                  value={toDateInput(form.end)}
+                  onChange={(e) => setEnd(mergeDateTime(form.end, e.target.value, null))}
+                  className="h-11 font-bold flex-1"
+                />
+                <Input
+                  type="time"
+                  value={toTimeInput(form.end)}
+                  onChange={(e) => setEnd(mergeDateTime(form.end, null, e.target.value))}
+                  className="h-11 w-24"
+                />
+              </div>
+            </div>
           </div>
 
           <div className="space-y-1.5">
