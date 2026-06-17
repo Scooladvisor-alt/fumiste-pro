@@ -1,0 +1,45 @@
+{
+  "name": "AccessGrant",
+  "type": "object",
+  "properties": {
+    "plan": {
+      "type": "string",
+      "enum": [
+        "simple",
+        "sms"
+      ],
+      "default": "simple",
+      "description": "Offre choisie : simple (19\u20ac) ou sms (30\u20ac)"
+    },
+    "unlocked_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date \u00e0 laquelle l'utilisateur a saisi le code d'acc\u00e8s valide"
+    },
+    "calendar_connected": {
+      "type": "boolean",
+      "default": false,
+      "description": "L'utilisateur a connect\u00e9 son Google Calendar"
+    },
+    "gmail_connected": {
+      "type": "boolean",
+      "default": false,
+      "description": "L'utilisateur a connect\u00e9 son Gmail"
+    }
+  },
+  "required": [],
+  "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}
