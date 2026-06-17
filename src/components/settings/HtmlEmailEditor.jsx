@@ -78,7 +78,7 @@ export default function HtmlEmailEditor({
         </p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-3">
+      <div className="grid lg:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label>Code HTML</Label>
           <Textarea
@@ -86,14 +86,16 @@ export default function HtmlEmailEditor({
             value={html || ""}
             onChange={(e) => onHtmlChange(e.target.value)}
             placeholder="<p>Bonjour {{client}}…</p>"
-            className="resize-none font-mono text-xs h-64"
+            className="resize-none font-mono text-xs h-96"
           />
         </div>
         <div className="space-y-1.5">
-          <Label>Aperçu</Label>
-          <div
-            className="border border-border rounded-md p-3 h-64 overflow-auto bg-white text-sm prose prose-sm max-w-none"
-            dangerouslySetInnerHTML={{ __html: renderPreview(html) }}
+          <Label>Aperçu en temps réel</Label>
+          <iframe
+            title="Aperçu de l'e-mail"
+            className="w-full h-96 border border-border rounded-md bg-white"
+            sandbox=""
+            srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>body{margin:0;padding:16px;font-family:Inter,system-ui,sans-serif;color:#1f2937;font-size:14px;line-height:1.5;}img{max-width:100%;height:auto;}</style></head><body>${renderPreview(html)}</body></html>`}
           />
         </div>
       </div>

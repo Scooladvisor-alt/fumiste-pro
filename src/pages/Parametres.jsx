@@ -8,7 +8,7 @@ import DailySendTime from "@/components/settings/DailySendTime";
 
 export default function Parametres() {
   return (
-    <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-4">
+    <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-4">
       <h1 className="font-display font-bold text-xl md:text-2xl mb-2">Réglages</h1>
       <GoogleSync />
       <GmailConnect />
