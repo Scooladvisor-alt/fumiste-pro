@@ -1,6 +1,6 @@
 import { Check, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { base44 } from "@/api/base44Client";
 
 const PLANS = [
   {
@@ -36,8 +36,6 @@ const PLANS = [
 ];
 
 export default function LandingPricing() {
-  const navigate = useNavigate();
-
   return (
     <section id="pricing" className="py-20 bg-white">
       <div className="max-w-4xl mx-auto px-5">
@@ -67,9 +65,9 @@ export default function LandingPricing() {
               </div>
               <Button
                 className={`w-full mt-5 rounded-xl ${p.highlight ? "bg-blue-600 hover:bg-blue-700" : "bg-slate-900 hover:bg-slate-800"}`}
-                onClick={() => navigate(`/code?plan=${p.plan}`)}
+                onClick={() => base44.auth.redirectToLogin()}
               >
-                Choisir cette offre
+                Obtenir un accès
               </Button>
               <ul className="mt-6 space-y-3">
                 {p.features.map((f) => (

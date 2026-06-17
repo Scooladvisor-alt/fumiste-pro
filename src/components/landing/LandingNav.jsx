@@ -31,8 +31,8 @@ export default function LandingNav() {
           <Button variant="ghost" className="hidden sm:inline-flex text-slate-700" onClick={() => base44.auth.redirectToLogin()}>
             Connexion
           </Button>
-          <Button className="bg-blue-600 hover:bg-blue-700 rounded-xl" asChild>
-            <a href="#pricing">Choisir une offre</a>
+          <Button className="bg-blue-600 hover:bg-blue-700 rounded-xl" onClick={() => base44.auth.redirectToLogin()}>
+            Obtenir un accès
           </Button>
         </div>
       </div>

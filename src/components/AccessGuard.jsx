@@ -1,11 +1,11 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAccessGrant } from "@/hooks/useAccessGrant";
 
-// Protège l'espace logiciel : tant que le code d'accès n'est pas validé -> /code,
-// puis tant que les comptes Google ne sont pas connectés -> /onboarding.
+// Protège l'espace logiciel : tant que les comptes Google ne sont pas
+// connectés -> /onboarding.
 export default function AccessGuard() {
   const location = useLocation();
-  const { isUnlocked, needsOnboarding, isLoading } = useAccessGrant();
+  const { needsOnboarding, isLoading } = useAccessGrant();
 
   if (isLoading) {
     return (
@@ -15,7 +15,6 @@ export default function AccessGuard() {
     );
   }
 
-  if (!isUnlocked) return <Navigate to="/code" replace />;
   if (needsOnboarding && location.pathname !== "/onboarding") {
     return <Navigate to="/onboarding" replace />;
   }

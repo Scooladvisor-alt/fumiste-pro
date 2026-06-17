@@ -1,19 +1,22 @@
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 
-// Récupère l'AccessGrant de l'utilisateur courant (un seul par utilisateur via RLS).
+// Récupère (ou crée) l'AccessGrant de l'utilisateur courant.
+// L'utilisateur est identifié par sa connexion Google : à la première visite
+// on crée son AccessGrant, puis l'onboarding lui demande de connecter
+// son Google Calendar et son Gmail.
 export function useAccessGrant() {
   const query = useQuery({
     queryKey: ["accessGrant"],
     queryFn: async () => {
       const list = await base44.entities.AccessGrant.list();
-      return list[0] || null;
+      if (list[0]) return list[0];
+      return await base44.entities.AccessGrant.create({});
     },
   });
 
   const grant = query.data;
-  const isUnlocked = !!grant?.unlocked_at;
-  const needsOnboarding = isUnlocked && !(grant?.calendar_connected && grant?.gmail_connected);
+  const needsOnboarding = !(grant?.calendar_connected && grant?.gmail_connected);
 
-  return { grant, isUnlocked, needsOnboarding, ...query };
+  return { grant, needsOnboarding, ...query };
 }

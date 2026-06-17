@@ -1,5 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { base44 } from "@/api/base44Client";
 
 export default function LandingCTA() {
   return (
@@ -15,9 +16,9 @@ export default function LandingCTA() {
           <Button
             size="lg"
             className="mt-8 bg-white text-blue-700 hover:bg-blue-50 rounded-xl h-12 px-7 text-base"
-            asChild
+            onClick={() => base44.auth.redirectToLogin()}
           >
-            <a href="#pricing">Choisir une offre <ArrowRight className="w-4 h-4" /></a>
+            Obtenir un accès <ArrowRight className="w-4 h-4" />
           </Button>
         </div>
       </div>
