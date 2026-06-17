@@ -56,6 +56,7 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
 
   const handleResizeDown = (appt, edge, e) => {
     e.stopPropagation();
+    e.preventDefault();
     if (e.button !== 0) return;
     const columnEl = e.currentTarget.closest("[data-day-column]");
     if (!columnEl) return;
@@ -63,14 +64,17 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
     const end = new Date(appt.end);
     const startMin = start.getHours() * 60 + start.getMinutes();
     const endMin = end.getHours() * 60 + end.getMinutes();
-    resizeRef.current = { columnEl, appt, edge, startMin, endMin };
-    columnEl.setPointerCapture(e.pointerId);
+    const handleEl = e.currentTarget;
+    resizeRef.current = { columnEl, handleEl, appt, edge, startMin, endMin };
+    // Capture le pointeur sur la poignée elle-même pour recevoir move/up de façon fiable.
+    handleEl.setPointerCapture(e.pointerId);
     setResizing({ id: appt.id, startMin, endMin });
   };
 
   const handleResizeMove = (e) => {
     const r = resizeRef.current;
     if (!r) return;
+    e.stopPropagation();
     const cur = yToMinutes(e.clientY, r.columnEl);
     if (r.edge === "top") {
       const startMin = Math.min(cur, r.endMin - SNAP_MIN);
@@ -247,7 +251,13 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
                     key={a.id}
                     draggable={!isResizing}
                     onPointerDown={(e) => e.stopPropagation()}
-                    onDragStart={(e) => e.dataTransfer.setData("text/plain", a.id)}
+                    onDragStart={(e) => {
+                      if (resizeRef.current) {
+                        e.preventDefault();
+                        return;
+                      }
+                      e.dataTransfer.setData("text/plain", a.id);
+                    }}
                     onClick={(e) => {
                       e.stopPropagation();
                       if (!isResizing) onSelectEvent(a);
@@ -257,7 +267,9 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
                   >
                     <div
                       onPointerDown={(e) => handleResizeDown(a, "top", e)}
-                      className="absolute top-0 left-0 right-0 h-2 cursor-ns-resize z-20"
+                      onPointerMove={handleResizeMove}
+                      onPointerUp={handleResizeUp}
+                      className="absolute top-0 left-0 right-0 h-2 cursor-ns-resize z-20 touch-none"
                     >
                       <div className="mx-auto mt-0.5 w-6 h-1 rounded-full bg-white/60 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
@@ -268,7 +280,9 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
                     <EventBadges appointment={a} className="mt-0.5" />
                     <div
                       onPointerDown={(e) => handleResizeDown(a, "bottom", e)}
-                      className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize z-20"
+                      onPointerMove={handleResizeMove}
+                      onPointerUp={handleResizeUp}
+                      className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize z-20 touch-none"
                     >
                       <div className="mx-auto mb-0.5 w-6 h-1 rounded-full bg-white/60 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
