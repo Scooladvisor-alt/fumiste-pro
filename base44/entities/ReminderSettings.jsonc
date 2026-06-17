@@ -84,5 +84,27 @@
       "description": "Corps HTML de l'e-mail de relance test d'\u00e9tanch\u00e9it\u00e9 (avec variables)"
     }
   },
-  "required": []
+  "required": [],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
 }
