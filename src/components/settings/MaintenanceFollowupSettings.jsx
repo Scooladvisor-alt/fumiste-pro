@@ -34,7 +34,7 @@ export default function MaintenanceFollowupSettings() {
 
   const sendTest = async () => {
     setTesting(true);
-    const res = await base44.functions.invoke("sendMaintenanceFollowups", {});
+    const res = await base44.functions.invoke("sendMaintenanceFollowups", { manual: true });
     setTesting(false);
     const sent = (res.data?.ramonage?.sent ?? 0) + (res.data?.etancheite?.sent ?? 0);
     toast({
