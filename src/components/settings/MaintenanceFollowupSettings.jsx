@@ -25,8 +25,7 @@ const ETANCHEITE_VARS = [
   { token: "{{date_dernier_test}}", label: "Date du dernier test d'étanchéité" },
 ];
 
-const MONTH_OPTIONS = [6, 12, 18, 24, 36];
-const ETANCHEITE_MONTH_OPTIONS = [12, 24, 36, 48, 60];
+const MONTH_OPTIONS = [6, 12];
 
 export default function MaintenanceFollowupSettings() {
   const { toast } = useToast();
@@ -55,6 +54,10 @@ export default function MaintenanceFollowupSettings() {
   };
 
   if (!settings) return null;
+
+  if (settings.etancheite_followup_months !== 36) {
+    update({ etancheite_followup_months: 36 });
+  }
 
   return (
     <div className="bg-card border border-border rounded-2xl p-5">
@@ -131,19 +134,7 @@ export default function MaintenanceFollowupSettings() {
 
       <div className="flex items-center justify-between py-3 border-t border-border">
         <Label>Relancer après</Label>
-        <Select
-          value={String(settings.etancheite_followup_months)}
-          onValueChange={(v) => update({ etancheite_followup_months: Number(v) })}
-        >
-          <SelectTrigger className="w-44">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {ETANCHEITE_MONTH_OPTIONS.map((m) => (
-              <SelectItem key={m} value={String(m)}>{m} mois</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <span className="text-sm font-medium text-muted-foreground">36 mois (obligation légale)</span>
       </div>
 
       <div className="py-4 border-t border-border">
