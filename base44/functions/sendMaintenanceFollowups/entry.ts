@@ -58,9 +58,26 @@ Deno.serve(async (req) => {
     }
 
     const clients = await base44.asServiceRole.entities.Client.list();
+    const appointments = await base44.asServiceRole.entities.Appointment.list();
     const { accessToken } = await base44.asServiceRole.connectors.getConnection('gmail');
     const authHeader = { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' };
     const today = new Date().toISOString().slice(0, 10);
+
+    // Calcule, par client, la dernière date (YYYY-MM-DD) de ramonage et de test d'étanchéité
+    // directement depuis les rendez-vous passés (plus fiable que le champ stocké sur le client).
+    const lastByClient = {};
+    for (const appt of appointments) {
+      if (!appt.client_id || !appt.start) continue;
+      const type = (appt.intervention_type || '').toLowerCase();
+      let key = null;
+      if (type.includes('ramonage')) key = 'ramonage';
+      else if (type.includes('étanch') || type.includes('etanch')) key = 'etancheite';
+      if (!key) continue;
+      const date = appt.start.slice(0, 10);
+      if (date > today) continue; // ignore les rendez-vous futurs
+      const entry = (lastByClient[appt.client_id] = lastByClient[appt.client_id] || {});
+      if (!entry[key] || date > entry[key]) entry[key] = date;
+    }
 
     async function sendOne(client, subjectTpl, htmlTpl, vars) {
       const email = client.email;
@@ -79,17 +96,24 @@ Deno.serve(async (req) => {
     const result = { ramonage: { sent: 0, candidates: 0 }, etancheite: { sent: 0, candidates: 0 } };
 
     for (const client of clients) {
+      const computed = lastByClient[client.id] || {};
+
       // --- Ramonage (annuel) ---
       if (ramonageOn) {
         const months = settings.followup_months ?? 12;
-        const due = isDue(client.last_ramonage_date, months);
+        // Date de référence : la plus récente entre le champ client et le calcul depuis les RDV.
+        const ramonageDate = [client.last_ramonage_date, computed.ramonage]
+          .filter(Boolean)
+          .sort()
+          .pop();
+        const due = isDue(ramonageDate, months);
         // Anti-doublon : ne pas renvoyer si déjà relancé après le dernier ramonage
-        const alreadySent = client.followup_sent_date && client.followup_sent_date > client.last_ramonage_date;
+        const alreadySent = client.followup_sent_date && client.followup_sent_date > ramonageDate;
         if (due && !alreadySent) {
           result.ramonage.candidates += 1;
           const ok = await sendOne(client, settings.followup_subject, settings.followup_html, {
             '{{client}}': client.full_name || '',
-            '{{date_dernier_ramonage}}': formatFr(client.last_ramonage_date),
+            '{{date_dernier_ramonage}}': formatFr(ramonageDate),
           });
           if (ok) {
             await base44.asServiceRole.entities.Client.update(client.id, { followup_sent_date: today });
@@ -101,13 +125,17 @@ Deno.serve(async (req) => {
       // --- Test d'étanchéité (triennal) ---
       if (etancheiteOn) {
         const months = settings.etancheite_followup_months ?? 36;
-        const due = isDue(client.last_etancheite_date, months);
-        const alreadySent = client.etancheite_followup_sent_date && client.etancheite_followup_sent_date > client.last_etancheite_date;
+        const etancheiteDate = [client.last_etancheite_date, computed.etancheite]
+          .filter(Boolean)
+          .sort()
+          .pop();
+        const due = isDue(etancheiteDate, months);
+        const alreadySent = client.etancheite_followup_sent_date && client.etancheite_followup_sent_date > etancheiteDate;
         if (due && !alreadySent) {
           result.etancheite.candidates += 1;
           const ok = await sendOne(client, settings.etancheite_followup_subject, settings.etancheite_followup_html, {
             '{{client}}': client.full_name || '',
-            '{{date_dernier_test}}': formatFr(client.last_etancheite_date),
+            '{{date_dernier_test}}': formatFr(etancheiteDate),
           });
           if (ok) {
             await base44.asServiceRole.entities.Client.update(client.id, { etancheite_followup_sent_date: today });
