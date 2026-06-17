@@ -207,7 +207,7 @@ export default function AppointmentDialog({
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
               Annuler
             </Button>
-            <Button onClick={handleSave} disabled={saving || !form.client_id}>
+            <Button onClick={handleSave} disabled={saving}>
               {saving ? "…" : "Enregistrer"}
             </Button>
           </div>
