@@ -43,6 +43,11 @@ module.exports = {
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
   			ring: 'hsl(var(--ring))',
+  			ember: {
+  				DEFAULT: 'hsl(var(--ember))',
+  				deep: 'hsl(var(--ember-deep))',
+  				glow: 'hsl(var(--ember-glow))'
+  			},
   			chart: {
   				'1': 'hsl(var(--chart-1))',
   				'2': 'hsl(var(--chart-2))',

@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, Plus, Trash2, Download } from "lucide-react";
+import { Search, Plus, Trash2, Download, Users } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +36,9 @@ export default function Clients() {
   return (
     <div className="p-4 md:p-6 h-full flex flex-col">
       <div className="flex items-center gap-3 mb-5">
+        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-ember to-ember-deep flex items-center justify-center shadow-md shadow-ember/25 shrink-0">
+          <Users className="w-5 h-5 text-white" />
+        </div>
         <h1 className="font-display font-bold text-xl md:text-2xl">
           Clients <span className="text-muted-foreground font-semibold">({clients.length})</span>
         </h1>

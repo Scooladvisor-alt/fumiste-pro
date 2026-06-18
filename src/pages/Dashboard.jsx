@@ -34,23 +34,27 @@ export default function Dashboard() {
 
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto">
-      <div className="mb-6 flex items-end justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="font-display font-bold text-2xl md:text-3xl">
-            Bonjour{userName ? ` ${userName}` : ""} 👋
-          </h1>
-          <p className="text-muted-foreground capitalize">
-            {format(new Date(), "EEEE d MMMM yyyy", { locale: fr })}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 text-sm bg-card border border-border rounded-xl px-3 py-2">
-          <Users className="w-4 h-4 text-primary" />
-          <span className="font-semibold">{clients.length}</span>
-          <span className="text-muted-foreground">clients</span>
+      {/* Bandeau braise */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-ember-deep via-ember to-ember-glow p-6 md:p-7 mb-6 shadow-xl shadow-ember/25">
+        <div className="pointer-events-none absolute -right-8 -top-10 w-48 h-48 rounded-full bg-white/15 blur-2xl" />
+        <div className="relative flex items-end justify-between gap-4 flex-wrap">
+          <div>
+            <p className="text-white/80 text-sm font-medium capitalize">
+              {format(new Date(), "EEEE d MMMM yyyy", { locale: fr })}
+            </p>
+            <h1 className="font-display font-extrabold text-2xl md:text-3xl text-white mt-1">
+              Bonjour{userName ? ` ${userName}` : ""} 🔥
+            </h1>
+          </div>
+          <div className="flex items-center gap-2 text-sm bg-white/15 backdrop-blur-sm text-white rounded-xl px-3.5 py-2.5 border border-white/20">
+            <Users className="w-4 h-4" />
+            <span className="font-bold text-base">{clients.length}</span>
+            <span className="text-white/80">clients</span>
+          </div>
         </div>
       </div>
 
-      <div className="bg-card rounded-2xl border border-border p-5 mb-6">
+      <div className="bg-card rounded-2xl border border-border p-5 mb-6 shadow-sm">
         <div className="flex items-center justify-between mb-5 gap-2 flex-wrap">
           <h2 className="font-display font-bold text-lg">Tour de contrôle</h2>
           <PeriodFilter value={period} onChange={setPeriod} />

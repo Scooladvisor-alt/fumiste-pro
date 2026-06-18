@@ -1,18 +1,18 @@
 import { Bell, Star, Flame, Droplets, MessageSquare, Send } from "lucide-react";
 
 const TYPES = [
-  { key: "rappel", label: "Rappels d'intervention", icon: Bell, accent: "bg-blue-100 text-blue-600" },
+  { key: "rappel", label: "Rappels d'intervention", icon: Bell, accent: "bg-orange-100 text-orange-600" },
   { key: "avis", label: "Demandes d'avis Google", icon: Star, accent: "bg-amber-100 text-amber-600" },
-  { key: "relance_ramonage", label: "Relances ramonage", icon: Flame, accent: "bg-orange-100 text-orange-600" },
-  { key: "relance_etancheite", label: "Relances test d'étanchéité", icon: Droplets, accent: "bg-cyan-100 text-cyan-600" },
-  { key: "sms", label: "SMS envoyés", icon: MessageSquare, accent: "bg-violet-100 text-violet-600" },
+  { key: "relance_ramonage", label: "Relances ramonage", icon: Flame, accent: "bg-red-100 text-red-600" },
+  { key: "relance_etancheite", label: "Relances test d'étanchéité", icon: Droplets, accent: "bg-rose-100 text-rose-600" },
+  { key: "sms", label: "SMS envoyés", icon: MessageSquare, accent: "bg-stone-200 text-stone-700" },
 ];
 
 export default function CommunicationStats({ counts, total }) {
   return (
     <div>
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-11 h-11 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-ember to-ember-deep text-white flex items-center justify-center shadow-md shadow-ember/30">
           <Send className="w-5 h-5" />
         </div>
         <div>

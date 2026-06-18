@@ -23,18 +23,68 @@ export default function Layout() {
     to === "/app" ? location.pathname === "/app" : location.pathname.startsWith(to);
 
   return (
-    <div className="h-screen bg-secondary/40 flex flex-col font-body">
-      {/* Top bar */}
-      <header className="shrink-0 bg-card/80 backdrop-blur-md border-b border-border/70 sticky top-0 z-20 shadow-sm">
-        <div className="flex items-center gap-3 px-4 h-16 max-w-[120rem] mx-auto w-full">
-          <Link to="/app" className="flex items-center gap-2.5 shrink-0 mr-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center shadow-md shadow-primary/20">
-              <Flame className="w-[18px] h-[18px] text-primary-foreground" />
-            </div>
-            <p className="font-display font-extrabold text-base text-foreground tracking-tight hidden sm:block">Fumiste Pro</p>
-          </Link>
+    <div className="h-screen flex font-body bg-[#fbf7f4]">
+      {/* Sidebar braise */}
+      <aside className="hidden lg:flex w-64 shrink-0 flex-col bg-[#1c1410] text-white/90 relative overflow-hidden">
+        {/* lueur de braise en bas */}
+        <div className="pointer-events-none absolute -bottom-24 -left-10 w-72 h-72 rounded-full bg-gradient-to-t from-ember-glow/40 via-ember/20 to-transparent blur-3xl" />
+        <div className="pointer-events-none absolute -top-10 right-0 w-40 h-40 rounded-full bg-ember/10 blur-2xl" />
 
-          <nav className="flex items-center gap-1 flex-1 overflow-x-auto no-scrollbar">
+        <div className="relative px-5 py-6 flex items-center gap-3">
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-ember-glow via-ember to-ember-deep flex items-center justify-center shadow-lg shadow-ember/40">
+            <Flame className="w-6 h-6 text-white" />
+          </div>
+          <div className="leading-tight">
+            <p className="font-display font-extrabold text-lg tracking-tight text-white">Fumiste Pro</p>
+            <p className="text-[11px] uppercase tracking-[0.2em] text-ember-glow/80 font-semibold">Gestion ramonage</p>
+          </div>
+        </div>
+
+        <nav className="relative flex-1 px-3 py-3 space-y-1">
+          {NAV.map(({ to, label, icon: Icon }) => {
+            const active = isActive(to);
+            return (
+              <Link
+                key={to}
+                to={to}
+                className={cn(
+                  "group flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium transition-all",
+                  active
+                    ? "bg-gradient-to-r from-ember to-ember-deep text-white shadow-lg shadow-ember/30"
+                    : "text-white/55 hover:text-white hover:bg-white/5"
+                )}
+              >
+                <Icon className={cn("w-[18px] h-[18px] transition-transform", !active && "group-hover:scale-110")} />
+                {label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="relative p-3 border-t border-white/10">
+          <button
+            onClick={() => base44.auth.logout()}
+            className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium text-white/55 hover:text-white hover:bg-white/5 transition-colors"
+          >
+            <LogOut className="w-[18px] h-[18px]" />
+            Se déconnecter
+          </button>
+        </div>
+      </aside>
+
+      {/* Mobile top bar */}
+      <div className="flex-1 min-w-0 flex flex-col">
+        <header className="lg:hidden shrink-0 bg-[#1c1410] text-white sticky top-0 z-20">
+          <div className="flex items-center gap-3 px-4 h-16">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-ember-glow via-ember to-ember-deep flex items-center justify-center">
+              <Flame className="w-5 h-5 text-white" />
+            </div>
+            <p className="font-display font-extrabold text-base tracking-tight flex-1">Fumiste Pro</p>
+            <button onClick={() => base44.auth.logout()} className="text-white/60 hover:text-white p-2">
+              <LogOut className="w-5 h-5" />
+            </button>
+          </div>
+          <nav className="flex items-center gap-1 px-2 pb-2 overflow-x-auto no-scrollbar">
             {NAV.map(({ to, label, icon: Icon }) => {
               const active = isActive(to);
               return (
@@ -42,34 +92,22 @@ export default function Layout() {
                   key={to}
                   to={to}
                   className={cn(
-                    "relative flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap",
-                    active
-                      ? "bg-primary text-primary-foreground shadow-sm shadow-primary/25"
-                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors",
+                    active ? "bg-gradient-to-r from-ember to-ember-deep text-white" : "text-white/55"
                   )}
                 >
                   <Icon className="w-[18px] h-[18px]" />
-                  <span className="hidden md:inline">{label}</span>
+                  <span className="hidden xs:inline">{label}</span>
                 </Link>
               );
             })}
           </nav>
+        </header>
 
-          <button
-            onClick={() => base44.auth.logout()}
-            className="shrink-0 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg px-3 py-2 transition-colors"
-            title="Se déconnecter"
-          >
-            <LogOut className="w-4 h-4" />
-            <span className="hidden sm:inline">Se déconnecter</span>
-          </button>
-        </div>
-      </header>
-
-      {/* Content */}
-      <main className="flex-1 min-h-0 overflow-auto">
-        <Outlet />
-      </main>
+        <main className="flex-1 min-h-0 overflow-auto">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }
