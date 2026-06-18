@@ -1,35 +1,43 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 const CAL_URL = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
+const CALENDAR_CONNECTOR_ID = '6a32cbfde2927ef1458ec237';
 
+// Synchronisation ENTRANTE (Google -> logiciel) pour l'UTILISATEUR COURANT.
+// Lit le calendrier Google de l'utilisateur connecté (son propre compte) et
+// importe / met à jour / supprime ses rendez-vous dans le logiciel.
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const body = await req.json();
-
-    const state = body?.data?._provider_meta?.['x-goog-resource-state'];
-    if (state === 'sync') {
-      return Response.json({ status: 'sync_ack' });
+    const user = await base44.auth.me();
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { accessToken } = await base44.asServiceRole.connectors.getConnection('googlecalendar');
+    // Token du calendrier de l'utilisateur courant (son propre compte Google)
+    let accessToken;
+    try {
+      const conn = await base44.asServiceRole.connectors.getCurrentAppUserConnection(CALENDAR_CONNECTOR_ID);
+      accessToken = conn?.accessToken;
+    } catch {
+      accessToken = null;
+    }
+    if (!accessToken) {
+      return Response.json({ status: 'calendar_not_connected' }, { status: 400 });
+    }
     const authHeader = { Authorization: `Bearer ${accessToken}` };
 
-    // Load sync token
-    const existing = await base44.asServiceRole.entities.SyncState.list();
-    const syncRecord = existing.length > 0 ? existing[0] : null;
+    // Sync token propre à cet utilisateur
+    const states = await base44.asServiceRole.entities.SyncState.filter({ created_by_id: user.id });
+    const syncRecord = states.length > 0 ? states[0] : null;
 
     const baseParams = 'maxResults=100&singleEvents=true&showDeleted=true';
-    let url = `${CAL_URL}?${baseParams}`;
-    if (syncRecord?.sync_token) {
-      url += `&syncToken=${syncRecord.sync_token}`;
-    } else {
-      url += '&timeMin=' + new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    }
+    const freshUrl = `${CAL_URL}?${baseParams}&timeMin=${new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()}`;
+    let url = syncRecord?.sync_token ? `${CAL_URL}?${baseParams}&syncToken=${syncRecord.sync_token}` : freshUrl;
 
     let res = await fetch(url, { headers: authHeader });
     if (res.status === 410) {
-      url = `${CAL_URL}?${baseParams}` + '&timeMin=' + new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      url = freshUrl;
       res = await fetch(url, { headers: authHeader });
     }
     if (!res.ok) {
@@ -37,7 +45,7 @@ Deno.serve(async (req) => {
       return Response.json({ status: 'api_error', detail }, { status: 502 });
     }
 
-    // Drain all pages
+    // Parcourir toutes les pages
     const allItems = [];
     let pageData = await res.json();
     let newSyncToken = null;
@@ -45,13 +53,14 @@ Deno.serve(async (req) => {
       allItems.push(...(pageData.items || []));
       if (pageData.nextSyncToken) newSyncToken = pageData.nextSyncToken;
       if (!pageData.nextPageToken) break;
-      const nextRes = await fetch(`${url}&pageToken=${pageData.nextPageToken}`, { headers: authHeader });
+      const sep = url.includes('?') ? '&' : '?';
+      const nextRes = await fetch(`${url}${sep}pageToken=${pageData.nextPageToken}`, { headers: authHeader });
       if (!nextRes.ok) break;
       pageData = await nextRes.json();
     }
 
-    // Existing appointments already linked to a google event
-    const linked = await base44.asServiceRole.entities.Appointment.filter({});
+    // Rendez-vous de cet utilisateur déjà liés à un event Google (RLS via user token)
+    const linked = await base44.entities.Appointment.list('-start', 2000);
     const byGoogleId = {};
     for (const a of linked) {
       if (a.google_event_id) byGoogleId[a.google_event_id] = a;
@@ -62,16 +71,14 @@ Deno.serve(async (req) => {
     for (const ev of allItems) {
       const localMatch = byGoogleId[ev.id];
 
-      // Event cancelled in Google -> remove locally
       if (ev.status === 'cancelled') {
         if (localMatch) {
-          await base44.asServiceRole.entities.Appointment.delete(localMatch.id);
+          await base44.entities.Appointment.delete(localMatch.id);
           deleted++;
         }
         continue;
       }
 
-      // Skip events without proper datetime (all-day handled as date)
       const startISO = ev.start?.dateTime || (ev.start?.date ? new Date(ev.start.date).toISOString() : null);
       const endISO = ev.end?.dateTime || (ev.end?.date ? new Date(ev.end.date).toISOString() : null);
       if (!startISO || !endISO) continue;
@@ -85,28 +92,26 @@ Deno.serve(async (req) => {
       };
 
       if (localMatch) {
-        // Update only if something actually changed (avoid sync loop)
         const changed =
           localMatch.title !== payload.title ||
           new Date(localMatch.start).getTime() !== new Date(startISO).getTime() ||
           new Date(localMatch.end).getTime() !== new Date(endISO).getTime() ||
           (localMatch.notes || '') !== payload.notes;
         if (changed) {
-          await base44.asServiceRole.entities.Appointment.update(localMatch.id, payload);
+          await base44.entities.Appointment.update(localMatch.id, payload);
           updated++;
         }
       } else {
-        await base44.asServiceRole.entities.Appointment.create({ ...payload, color: '#3b82f6' });
+        await base44.entities.Appointment.create({ ...payload, color: '#f97316' });
         created++;
       }
     }
 
-    // Persist new sync token
     if (newSyncToken) {
       if (syncRecord) {
-        await base44.asServiceRole.entities.SyncState.update(syncRecord.id, { sync_token: newSyncToken });
+        await base44.entities.SyncState.update(syncRecord.id, { sync_token: newSyncToken });
       } else {
-        await base44.asServiceRole.entities.SyncState.create({ sync_token: newSyncToken });
+        await base44.entities.SyncState.create({ sync_token: newSyncToken });
       }
     }
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   addDays,
   addMonths,
@@ -40,10 +40,18 @@ export default function Agenda() {
 
   const handleSync = async () => {
     setSyncing(true);
-    await base44.functions.invoke("syncFromGoogle", {});
+    try {
+      await base44.functions.invoke("syncFromGoogle", {});
+    } catch { /* calendrier non connecté : on ignore */ }
     await refresh();
     setSyncing(false);
   };
+
+  // Synchronisation automatique du calendrier de l'utilisateur à l'ouverture de l'agenda
+  useEffect(() => {
+    handleSync();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const navigate = (dir) => {
     if (view === "month") setCursor((c) => (dir > 0 ? addMonths(c, 1) : subMonths(c, 1)));

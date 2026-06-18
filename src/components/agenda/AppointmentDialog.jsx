@@ -139,10 +139,18 @@ export default function AppointmentDialog({
       title: form.title,
       description: form.notes,
     };
+    let savedId = appointment?.id;
     if (appointment?.id) {
       await base44.entities.Appointment.update(appointment.id, payload);
     } else {
-      await base44.entities.Appointment.create(payload);
+      const created = await base44.entities.Appointment.create(payload);
+      savedId = created?.id;
+    }
+    // Pousse vers le Google Calendar de l'utilisateur courant (ignoré si non connecté)
+    if (savedId) {
+      try {
+        await base44.functions.invoke("pushAppointmentToGoogle", { appointmentId: savedId, action: "upsert" });
+      } catch { /* ne bloque pas l'enregistrement */ }
     }
     refresh();
     setSaving(false);
@@ -152,7 +160,11 @@ export default function AppointmentDialog({
   const handleDelete = async () => {
     if (!appointment?.id) return;
     setSaving(true);
+    const googleEventId = appointment.google_event_id;
     await base44.entities.Appointment.delete(appointment.id);
+    try {
+      await base44.functions.invoke("pushAppointmentToGoogle", { action: "delete", googleEventId });
+    } catch { /* ne bloque pas la suppression */ }
     refresh();
     setSaving(false);
     onOpenChange(false);
