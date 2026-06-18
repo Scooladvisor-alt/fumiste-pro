@@ -7,7 +7,7 @@ export default function LandingFooter() {
         <div className="flex flex-col md:flex-row justify-between gap-8">
           <div className="max-w-xs">
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-ember to-ember-deep flex items-center justify-center">
                 <Flame className="w-5 h-5 text-white" />
               </div>
               <span className="font-display font-extrabold text-lg text-white">Fumiste Pro</span>

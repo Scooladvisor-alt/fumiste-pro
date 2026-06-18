@@ -13,7 +13,7 @@ export default function LandingNav() {
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
       <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-ember to-ember-deep flex items-center justify-center shadow-md shadow-ember/30">
             <Flame className="w-5 h-5 text-white" />
           </div>
           <span className="font-display font-extrabold text-lg tracking-tight">Fumiste Pro</span>
@@ -31,8 +31,8 @@ export default function LandingNav() {
           <Button variant="ghost" className="hidden sm:inline-flex text-slate-700" onClick={() => base44.auth.redirectToLogin("/app")}>
             Connexion
           </Button>
-          <Button className="bg-blue-600 hover:bg-blue-700 rounded-xl" onClick={() => base44.auth.redirectToLogin("/app")}>
-            Obtenir un accès
+          <Button className="bg-ember hover:bg-ember-deep rounded-xl" onClick={() => base44.auth.redirectToLogin("/app")}>
+            Créer mon compte
           </Button>
         </div>
       </div>

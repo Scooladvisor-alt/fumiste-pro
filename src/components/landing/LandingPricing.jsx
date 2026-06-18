@@ -49,11 +49,11 @@ export default function LandingPricing() {
             <div
               key={p.plan}
               className={`rounded-2xl p-7 border ${
-                p.highlight ? "border-blue-600 shadow-xl shadow-blue-100 relative" : "border-slate-200"
+                p.highlight ? "border-ember shadow-xl shadow-ember/15 relative" : "border-slate-200"
               }`}
             >
               {p.badge && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 bg-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 bg-ember text-white text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap">
                   <MessageSquare className="w-3 h-3" /> {p.badge}
                 </span>
               )}
@@ -64,15 +64,15 @@ export default function LandingPricing() {
                 <span className="text-slate-500 mb-1">/ mois</span>
               </div>
               <Button
-                className={`w-full mt-5 rounded-xl ${p.highlight ? "bg-blue-600 hover:bg-blue-700" : "bg-slate-900 hover:bg-slate-800"}`}
+                className={`w-full mt-5 rounded-xl ${p.highlight ? "bg-ember hover:bg-ember-deep" : "bg-slate-900 hover:bg-slate-800"}`}
                 onClick={() => base44.auth.redirectToLogin("/app")}
               >
-                Obtenir un accès
+                Créer mon compte
               </Button>
               <ul className="mt-6 space-y-3">
                 {p.features.map((f) => (
                   <li key={f} className="flex items-start gap-2 text-sm text-slate-600">
-                    <Check className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
+                    <Check className="w-4 h-4 text-ember mt-0.5 shrink-0" />
                     {f}
                   </li>
                 ))}
