@@ -23,25 +23,34 @@ Deno.serve(async (req) => {
       accessToken = null;
     }
     if (!accessToken) {
+      console.log('Aucun token calendrier pour user', user.id, user.email);
       return Response.json({ status: 'calendar_not_connected' }, { status: 400 });
     }
+    console.log('Token calendrier OK pour user', user.id, user.email);
     const authHeader = { Authorization: `Bearer ${accessToken}` };
 
     // Sync token propre à cet utilisateur
     const states = await base44.asServiceRole.entities.SyncState.filter({ created_by_id: user.id });
     const syncRecord = states.length > 0 ? states[0] : null;
 
-    const baseParams = 'maxResults=100&singleEvents=true&showDeleted=true';
-    const freshUrl = `${CAL_URL}?${baseParams}&timeMin=${new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()}`;
-    let url = syncRecord?.sync_token ? `${CAL_URL}?${baseParams}&syncToken=${syncRecord.sync_token}` : freshUrl;
+    // Fenêtre large : 90 jours en arrière, 365 jours en avant (couvre les RDV futurs)
+    const timeMin = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+    const timeMax = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+    const baseParams = 'maxResults=100&singleEvents=true&showDeleted=true&orderBy=startTime';
+    const freshUrl = `${CAL_URL}?${baseParams}&timeMin=${timeMin}&timeMax=${timeMax}`;
+    let url = syncRecord?.sync_token
+      ? `${CAL_URL}?maxResults=100&singleEvents=true&showDeleted=true&syncToken=${syncRecord.sync_token}`
+      : freshUrl;
 
     let res = await fetch(url, { headers: authHeader });
     if (res.status === 410) {
+      console.log('syncToken expiré -> import complet');
       url = freshUrl;
       res = await fetch(url, { headers: authHeader });
     }
     if (!res.ok) {
       const detail = await res.text();
+      console.log('Erreur API Google Calendar', res.status, detail);
       return Response.json({ status: 'api_error', detail }, { status: 502 });
     }
 
@@ -115,7 +124,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    return Response.json({ status: 'ok', created, updated, deleted });
+    console.log(`Import terminé: ${allItems.length} events reçus, ${created} créés, ${updated} maj, ${deleted} suppr`);
+    return Response.json({ status: 'ok', received: allItems.length, created, updated, deleted });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
