@@ -47,9 +47,25 @@ export default function Agenda() {
     setSyncing(false);
   };
 
-  // Synchronisation automatique du calendrier de l'utilisateur à l'ouverture de l'agenda
+  // Synchro silencieuse (sans spinner) pour le polling automatique
+  const silentSync = async () => {
+    try {
+      await base44.functions.invoke("syncFromGoogle", {});
+      await refresh();
+    } catch { /* calendrier non connecté : on ignore */ }
+  };
+
+  // Synchronisation auto à l'ouverture + toutes les 30s tant que l'agenda est ouvert,
+  // et dès que l'onglet redevient actif. Pas besoin d'actualiser la page.
   useEffect(() => {
     handleSync();
+    const interval = setInterval(silentSync, 30000);
+    const onVisible = () => { if (!document.hidden) silentSync(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
