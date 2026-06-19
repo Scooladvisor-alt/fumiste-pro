@@ -19,7 +19,8 @@ Deno.serve(async (req) => {
     try {
       const conn = await base44.asServiceRole.connectors.getCurrentAppUserConnection(CALENDAR_CONNECTOR_ID);
       accessToken = conn?.accessToken;
-    } catch {
+    } catch (e) {
+      console.log('Erreur récupération connexion calendrier:', e.message);
       accessToken = null;
     }
     if (!accessToken) {
@@ -45,8 +46,13 @@ Deno.serve(async (req) => {
       : freshUrl;
 
     let res = await fetch(url, { headers: authHeader });
-    if (res.status === 410) {
-      console.log('syncToken expiré -> import complet');
+    // Si le syncToken est invalide/expiré (410 OU 400, ex: changement de compte Google),
+    // on supprime l'ancien état et on refait un import complet.
+    if (!res.ok && url !== freshUrl) {
+      console.log('syncToken invalide (status', res.status, ') -> import complet');
+      if (syncRecord) {
+        try { await base44.asServiceRole.entities.SyncState.delete(syncRecord.id); } catch (_e) { /* ignore */ }
+      }
       url = freshUrl;
       res = await fetch(url, { headers: authHeader });
     }
