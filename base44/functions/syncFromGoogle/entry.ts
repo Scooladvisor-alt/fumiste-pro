@@ -33,11 +33,13 @@ Deno.serve(async (req) => {
     const states = await base44.asServiceRole.entities.SyncState.filter({ created_by_id: user.id });
     const syncRecord = states.length > 0 ? states[0] : null;
 
-    // Fenêtre large : 90 jours en arrière, 365 jours en avant (couvre les RDV futurs)
+    // Import initial : fenêtre large (90 j passés -> 365 j futurs).
+    // Google interdit showDeleted/orderBy combinés avec timeMin sur certains cas,
+    // donc l'import initial reste simple (pas de showDeleted, pas de orderBy).
     const timeMin = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
     const timeMax = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
-    const baseParams = 'maxResults=100&singleEvents=true&showDeleted=true&orderBy=startTime';
-    const freshUrl = `${CAL_URL}?${baseParams}&timeMin=${timeMin}&timeMax=${timeMax}`;
+    const freshUrl = `${CAL_URL}?maxResults=100&singleEvents=true&timeMin=${timeMin}&timeMax=${timeMax}`;
+    // Sync incrémental : syncToken seul (showDeleted pour récupérer les suppressions).
     let url = syncRecord?.sync_token
       ? `${CAL_URL}?maxResults=100&singleEvents=true&showDeleted=true&syncToken=${syncRecord.sync_token}`
       : freshUrl;
