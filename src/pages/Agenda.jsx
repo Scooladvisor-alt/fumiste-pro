@@ -17,6 +17,7 @@ import { useClients, useAppointments, useInterventionTypes, useRefreshData } fro
 import MonthView from "@/components/agenda/MonthView";
 import TimeGridView from "@/components/agenda/TimeGridView";
 import AppointmentDialog from "@/components/agenda/AppointmentDialog";
+import ReconnectCalendarBanner from "@/components/agenda/ReconnectCalendarBanner";
 
 const VIEWS = [
   { key: "day", label: "Jour" },
@@ -37,12 +38,17 @@ export default function Agenda() {
   const [slotStart, setSlotStart] = useState(null);
   const [slotEnd, setSlotEnd] = useState(null);
   const [syncing, setSyncing] = useState(false);
+  const [needsReconnect, setNeedsReconnect] = useState(false);
 
   const handleSync = async () => {
     setSyncing(true);
     try {
-      await base44.functions.invoke("syncFromGoogle", {});
-    } catch { /* calendrier non connecté : on ignore */ }
+      const res = await base44.functions.invoke("syncFromGoogle", {});
+      setNeedsReconnect(res?.data?.status === "reconnect_required");
+    } catch (e) {
+      // 403 => reconnexion nécessaire
+      if (e?.response?.data?.status === "reconnect_required") setNeedsReconnect(true);
+    }
     await refresh();
     setSyncing(false);
   };
@@ -50,9 +56,12 @@ export default function Agenda() {
   // Synchro silencieuse (sans spinner) pour le polling automatique
   const silentSync = async () => {
     try {
-      await base44.functions.invoke("syncFromGoogle", {});
+      const res = await base44.functions.invoke("syncFromGoogle", {});
+      setNeedsReconnect(res?.data?.status === "reconnect_required");
       await refresh();
-    } catch { /* calendrier non connecté : on ignore */ }
+    } catch (e) {
+      if (e?.response?.data?.status === "reconnect_required") setNeedsReconnect(true);
+    }
   };
 
   // Synchronisation auto à l'ouverture + toutes les 30s tant que l'agenda est ouvert,
@@ -173,6 +182,12 @@ export default function Agenda() {
           </Button>
         </div>
       </div>
+
+      {needsReconnect && (
+        <ReconnectCalendarBanner
+          onReconnected={() => { setNeedsReconnect(false); handleSync(); }}
+        />
+      )}
 
       {/* Views */}
       <div className="flex-1 min-h-0 bg-card rounded-2xl border border-border overflow-hidden">

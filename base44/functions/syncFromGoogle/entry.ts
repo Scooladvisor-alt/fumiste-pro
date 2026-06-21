@@ -59,6 +59,11 @@ Deno.serve(async (req) => {
     if (!res.ok) {
       const detail = await res.text();
       console.log('Erreur API Google Calendar', res.status, detail);
+      // 403 insufficient scopes / 401 : le jeton est périmé ou a été créé sans
+      // la permission de lecture. L'utilisateur doit simplement se reconnecter.
+      if (res.status === 403 || res.status === 401) {
+        return Response.json({ status: 'reconnect_required' }, { status: 403 });
+      }
       return Response.json({ status: 'api_error', detail }, { status: 502 });
     }
 
