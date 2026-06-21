@@ -51,6 +51,31 @@ export default function GoogleSync() {
     setStatus("disconnected");
   };
 
+  // Reconnexion propre : on déconnecte d'abord pour forcer Google à régénérer
+  // un jeton neuf (sinon l'ancien consentement périmé est réutilisé), puis on
+  // relance le flux de connexion dans le même geste de clic.
+  const reconnect = async () => {
+    setConnecting(true);
+    const popup = window.open("about:blank", "_blank", "width=520,height=640");
+    try {
+      await base44.connectors.disconnectAppUser(CALENDAR_CONNECTOR_ID);
+      const url = await base44.connectors.connectAppUser(CALENDAR_CONNECTOR_ID);
+      if (popup) popup.location.href = url;
+      else window.open(url, "_blank");
+    } catch {
+      if (popup) popup.close();
+      setConnecting(false);
+      return;
+    }
+    const timer = setInterval(() => {
+      if (!popup || popup.closed) {
+        clearInterval(timer);
+        check();
+        setConnecting(false);
+      }
+    }, 500);
+  };
+
   return (
     <div className="bg-card rounded-2xl border border-border p-5">
       <div className="flex items-center gap-3 mb-1">
@@ -75,6 +100,10 @@ export default function GoogleSync() {
             <CheckCircle2 className="w-4 h-4" />
             Connecté et synchronisé
           </div>
+          <Button variant="outline" size="sm" onClick={reconnect} disabled={connecting} className="gap-2">
+            {connecting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            Reconnecter
+          </Button>
           <Button variant="ghost" size="sm" onClick={disconnect} className="text-muted-foreground">
             Déconnecter
           </Button>
