@@ -79,9 +79,18 @@ Deno.serve(async (req) => {
     }
     const authHeader = { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' };
 
+    const body = await req.json().catch(() => ({}));
+    const isAuto = body?.auto === true;
+
     // Données de l'utilisateur (RLS : filtrées sur created_by_id)
     const settingsList = await base44.asServiceRole.entities.ReminderSettings.filter({ created_by_id: user.id });
     const settings = settingsList[0] || {};
+
+    const todayCheck = new Date().toISOString().slice(0, 10);
+    // Envoi AUTO : maximum une fois par jour. Si déjà fait aujourd'hui, on stoppe.
+    if (isAuto && settings.auto_send_last_run === todayCheck) {
+      return Response.json({ ok: true, skipped: 'already_sent_today', totalSent: 0 });
+    }
     const appointments = await base44.entities.Appointment.list();
     const clients = await base44.entities.Client.list();
     const clientMap = {};
@@ -207,6 +216,12 @@ Deno.serve(async (req) => {
     }
 
     const totalSent = result.reminders.sent + result.reviews.sent + result.ramonage.sent + result.etancheite.sent;
+
+    // Marque l'exécution du jour (anti-doublon de l'envoi auto à l'ouverture).
+    if (settings.id) {
+      await base44.asServiceRole.entities.ReminderSettings.update(settings.id, { auto_send_last_run: todayCheck });
+    }
+
     return Response.json({ ok: true, totalSent, ...result });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

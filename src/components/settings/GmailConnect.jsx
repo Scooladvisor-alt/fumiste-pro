@@ -24,8 +24,19 @@ export default function GmailConnect() {
 
   const connect = async () => {
     setConnecting(true);
-    const url = await base44.connectors.connectAppUser(GMAIL_CONNECTOR_ID);
-    const popup = window.open(url, "_blank");
+    // Ouvrir le popup IMMÉDIATEMENT (dans le geste du clic) pour éviter qu'il
+    // soit bloqué et que l'OAuth s'ouvre dans l'onglet principal (ce qui
+    // déconnecterait l'utilisateur du logiciel).
+    const popup = window.open("about:blank", "_blank", "width=520,height=640");
+    try {
+      const url = await base44.connectors.connectAppUser(GMAIL_CONNECTOR_ID);
+      if (popup) popup.location.href = url;
+      else window.open(url, "_blank");
+    } catch {
+      if (popup) popup.close();
+      setConnecting(false);
+      return;
+    }
     const timer = setInterval(() => {
       if (!popup || popup.closed) {
         clearInterval(timer);
