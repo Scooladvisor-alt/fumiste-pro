@@ -82,29 +82,26 @@
     "etancheite_followup_html": {
       "type": "string",
       "description": "Corps HTML de l'e-mail de relance test d'\u00e9tanch\u00e9it\u00e9 (avec variables)"
+    },
+    "auto_send_last_run": {
+      "type": "string",
+      "format": "date",
+      "description": "Date (YYYY-MM-DD) du dernier envoi automatique d\u00e9clench\u00e9 \u00e0 l'ouverture du logiciel (anti-doublon)"
     }
   },
   "required": [],
   "rls": {
     "create": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "created_by_id": "{{user.id}}"
     },
     "read": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "created_by_id": "{{user.id}}"
     },
     "update": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "created_by_id": "{{user.id}}"
     },
     "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "created_by_id": "{{user.id}}"
     }
   }
 }
