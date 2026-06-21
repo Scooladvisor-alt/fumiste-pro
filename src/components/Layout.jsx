@@ -4,6 +4,7 @@ import { LayoutDashboard, Users, Calendar, Flame, Settings, LogOut } from "lucid
 import { cn } from "@/lib/utils";
 import { ensureInterventionTypes } from "@/lib/seed";
 import { base44 } from "@/api/base44Client";
+import AutoSendEmails from "@/components/AutoSendEmails";
 
 const NAV = [
   { to: "/app", label: "Tableau de bord", icon: LayoutDashboard },
@@ -24,6 +25,7 @@ export default function Layout() {
 
   return (
     <div className="h-screen flex font-body bg-[#fbf7f4]">
+      <AutoSendEmails />
       {/* Sidebar braise */}
       <aside className="hidden lg:flex w-64 shrink-0 flex-col bg-[#1c1410] text-white/90 relative overflow-hidden">
         {/* lueur de braise en bas */}

@@ -89,6 +89,10 @@ Deno.serve(async (req) => {
 
     const today = new Date().toISOString().slice(0, 10);
 
+    // Anti-doublon : e-mails déjà envoyés aujourd'hui (rappel / avis) à un client donné.
+    const todaysLogs = await base44.entities.CommunicationLog.filter({ sent_date: today });
+    const sentTodayKey = new Set(todaysLogs.map((l) => `${l.type}:${l.client_id || ''}`));
+
     async function sendEmail({ to, subject, html }) {
       const raw = buildMime({ to, subject, html });
       const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
@@ -106,6 +110,8 @@ Deno.serve(async (req) => {
         const client = clientMap[appt.client_id];
         const email = extractEmail(appt.notes || appt.description);
         if (!email) continue;
+        // Déjà envoyé aujourd'hui à ce client pour ce type ? on saute.
+        if (sentTodayKey.has(`${logType}:${appt.client_id || ''}`)) continue;
         const dt = new Date(appt.start);
         const vars = {
           '{{client}}': client?.full_name || '',
