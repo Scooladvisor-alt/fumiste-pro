@@ -5,14 +5,17 @@ import { Button } from "@/components/ui/button";
 
 export default function SendEmailsNow() {
   const [sending, setSending] = useState(false);
+  const [forcing, setForcing] = useState(false);
   const [result, setResult] = useState(null); // { totalSent, reasons } | { error }
 
-  const send = async () => {
-    setSending(true);
+  const send = async (force = false) => {
+    if (force) setForcing(true);
+    else setSending(true);
     setResult(null);
     try {
       // Déclenche exactement le même traitement que le passage quotidien automatique.
-      const res = await base44.functions.invoke("sendMyEmails", {});
+      // force = true : renvoie même les e-mails déjà envoyés aujourd'hui (pour tester / renvoyer).
+      const res = await base44.functions.invoke("sendMyEmails", { force });
       if (res.data?.error) {
         setResult({ error: res.data.error });
       } else {
@@ -22,6 +25,7 @@ export default function SendEmailsNow() {
       setResult({ error: e?.response?.data?.error || "send_failed" });
     }
     setSending(false);
+    setForcing(false);
   };
 
   return (
@@ -38,9 +42,14 @@ export default function SendEmailsNow() {
       </p>
 
       <div className="flex items-center gap-3 flex-wrap">
-        <Button onClick={send} disabled={sending} className="gap-2">
+        <Button onClick={() => send(false)} disabled={sending || forcing} className="gap-2">
           {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           Envoyer maintenant
+        </Button>
+
+        <Button variant="outline" onClick={() => send(true)} disabled={sending || forcing} className="gap-2">
+          {forcing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          Forcer le renvoi
         </Button>
 
         {result?.totalSent !== undefined && (
@@ -59,6 +68,11 @@ export default function SendEmailsNow() {
           </span>
         )}
       </div>
+
+      <p className="text-xs text-muted-foreground mt-3">
+        « Envoyer maintenant » n'envoie chaque e-mail qu'une fois par jour. « Forcer le renvoi » renvoie
+        même si l'e-mail a déjà été envoyé aujourd'hui (utile pour tester).
+      </p>
 
       {result?.totalSent === 0 && result?.reasons?.length > 0 && (
         <div className="mt-4 rounded-xl bg-amber-50 border border-amber-200 p-4">
