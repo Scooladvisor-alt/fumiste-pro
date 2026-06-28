@@ -24,8 +24,10 @@ export default function DailySendTime() {
         {saving && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
       </div>
       <p className="text-sm text-muted-foreground mb-4">
-        Chaque jour à cette heure, le logiciel analyse l'agenda pour envoyer les rappels
-        d'intervention et les demandes d'avis Google.
+        Chaque jour à cette heure exacte, l'automatisation s'exécute automatiquement (sans
+        ouvrir l'application) et effectue tout le traitement de la journée : rappels
+        d'intervention, demandes d'avis Google et relances d'entretien. Modifier cette heure
+        met immédiatement à jour la planification.
       </p>
 
       <div className="flex items-center justify-between py-3 border-t border-border">
