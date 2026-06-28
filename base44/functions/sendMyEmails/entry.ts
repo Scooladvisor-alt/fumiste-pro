@@ -147,8 +147,14 @@ Deno.serve(async (req) => {
       return res.ok;
     }
 
-    async function sendBatch({ targetDay, subjectTpl, htmlTpl, logType, extraVars = {} }) {
-      const targets = appointments.filter((a) => a.start && parisDay(a.start) === targetDay);
+    // targetDay : jour exact (rappels). OU fromDay/toDay : fenêtre [fromDay, toDay] inclus (avis Google).
+    async function sendBatch({ targetDay, fromDay, toDay, subjectTpl, htmlTpl, logType, extraVars = {} }) {
+      const targets = appointments.filter((a) => {
+        if (!a.start) return false;
+        const day = parisDay(a.start);
+        if (targetDay) return day === targetDay;
+        return day >= fromDay && day <= toDay;
+      });
       let sent = 0;
       for (const appt of targets) {
         const client = clientMap[appt.client_id];
@@ -212,8 +218,10 @@ Deno.serve(async (req) => {
       if (!settings.google_review_link) {
         reasons.push('Avis Google : aucun lien Google d\'avis renseigné dans vos réglages.');
       } else {
+        // Fenêtre : des rendez-vous passés, d'il y a `daysAfter` jours jusqu'à hier inclus.
         result.reviews = await sendBatch({
-          targetDay: dayOffset(-daysAfter),
+          fromDay: dayOffset(-daysAfter),
+          toDay: dayOffset(-1),
           subjectTpl: settings.review_subject || 'Votre avis nous intéresse',
           htmlTpl: settings.review_html || '<p>Bonjour {{client}}, <a href="{{lien_avis}}">laissez un avis</a>.</p>',
           logType: 'avis',
