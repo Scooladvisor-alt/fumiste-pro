@@ -12,6 +12,8 @@ import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import Layout from '@/components/Layout';
+import OnboardingGate from '@/components/OnboardingGate';
+import Onboarding from '@/pages/Onboarding';
 import Dashboard from '@/pages/Dashboard';
 import Clients from '@/pages/Clients';
 import Agenda from '@/pages/Agenda';
@@ -51,11 +53,14 @@ const AuthenticatedApp = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
-        <Route element={<Layout />}>
-          <Route path="/app" element={<Dashboard />} />
-          <Route path="/clients" element={<Clients />} />
-          <Route path="/agenda" element={<Agenda />} />
-          <Route path="/parametres" element={<Parametres />} />
+        <Route path="/onboarding" element={<Onboarding />} />
+        <Route element={<OnboardingGate />}>
+          <Route element={<Layout />}>
+            <Route path="/app" element={<Dashboard />} />
+            <Route path="/clients" element={<Clients />} />
+            <Route path="/agenda" element={<Agenda />} />
+            <Route path="/parametres" element={<Parametres />} />
+          </Route>
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

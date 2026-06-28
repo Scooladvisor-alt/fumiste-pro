@@ -12,11 +12,13 @@ export default function Dashboard() {
   const { data: clients } = useClients();
   const { data: appointments } = useAppointments();
   const { data: logs } = useCommunicationLogs();
-  const [userName, setUserName] = useState("");
+  const [companyName, setCompanyName] = useState("");
   const [period, setPeriod] = useState("today");
 
   useEffect(() => {
-    base44.auth.me().then((u) => setUserName(u?.full_name?.split(" ")[0] || "")).catch(() => {});
+    base44.entities.ReminderSettings.list()
+      .then((list) => setCompanyName(list[0]?.company_name || ""))
+      .catch(() => {});
   }, []);
 
   const { counts, total } = useMemo(() => {
@@ -43,7 +45,7 @@ export default function Dashboard() {
               {format(new Date(), "EEEE d MMMM yyyy", { locale: fr })}
             </p>
             <h1 className="font-display font-extrabold text-2xl md:text-3xl text-white mt-1">
-              Bonjour{userName ? ` ${userName}` : ""} 🔥
+              Bonjour{companyName ? ` ${companyName}` : ""} 🔥
             </h1>
           </div>
           <div className="flex items-center gap-2 text-sm bg-white/15 backdrop-blur-sm text-white rounded-xl px-3.5 py-2.5 border border-white/20">

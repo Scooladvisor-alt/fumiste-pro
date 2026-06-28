@@ -2,6 +2,15 @@
   "name": "ReminderSettings",
   "type": "object",
   "properties": {
+    "company_name": {
+      "type": "string",
+      "description": "Nom de l'entreprise du client (affich\u00e9 dans le tableau de bord)"
+    },
+    "onboarding_completed": {
+      "type": "boolean",
+      "description": "L'utilisateur a termin\u00e9 la configuration initiale (onboarding)",
+      "default": false
+    },
     "enabled": {
       "type": "boolean",
       "description": "Activer l'envoi automatique des rappels par e-mail",
@@ -49,12 +58,12 @@
     },
     "followup_enabled": {
       "type": "boolean",
-      "description": "Activer l'envoi automatique des e-mails de relance ramonage (tous les ans)",
+      "description": "Activer l'envoi automatique des e-mails de relance ramonage",
       "default": false
     },
     "followup_months": {
       "type": "number",
-      "description": "Nombre de mois apr\u00e8s le dernier ramonage pour envoyer la relance (12 = obligation annuelle)",
+      "description": "Nombre de mois apr\u00e8s le dernier ramonage pour envoyer la relance (6 ou 12)",
       "default": 12
     },
     "followup_subject": {
