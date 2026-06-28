@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 export default function SendEmailsNow() {
   const [sending, setSending] = useState(false);
-  const [result, setResult] = useState(null); // { totalSent } | { error }
+  const [result, setResult] = useState(null); // { totalSent, reasons } | { error }
 
   const send = async () => {
     setSending(true);
@@ -15,7 +15,7 @@ export default function SendEmailsNow() {
       if (res.data?.error) {
         setResult({ error: res.data.error });
       } else {
-        setResult({ totalSent: res.data?.totalSent ?? 0 });
+        setResult({ totalSent: res.data?.totalSent ?? 0, reasons: res.data?.reasons || [] });
       }
     } catch (e) {
       setResult({ error: e?.response?.data?.error || "send_failed" });
@@ -58,6 +58,20 @@ export default function SendEmailsNow() {
           </span>
         )}
       </div>
+
+      {result?.totalSent === 0 && result?.reasons?.length > 0 && (
+        <div className="mt-4 rounded-xl bg-amber-50 border border-amber-200 p-4">
+          <div className="flex items-center gap-2 text-amber-800 font-medium text-sm mb-2">
+            <AlertCircle className="w-4 h-4" />
+            Aucun e-mail envoyé — voici pourquoi :
+          </div>
+          <ul className="space-y-1 text-sm text-amber-900/80 list-disc pl-5">
+            {result.reasons.map((r, i) => (
+              <li key={i}>{r}</li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

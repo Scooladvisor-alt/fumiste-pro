@@ -24,25 +24,25 @@ export default function Layout() {
     to === "/app" ? location.pathname === "/app" : location.pathname.startsWith(to);
 
   return (
-    <div className="h-screen flex font-body bg-[#fbf7f4]">
+    <div className="h-screen flex flex-col font-body bg-[#fbf7f4]">
       <AutoSendEmails />
-      {/* Sidebar braise */}
-      <aside className="hidden lg:flex w-64 shrink-0 flex-col bg-[#1c1410] text-white/90 relative overflow-hidden">
-        {/* lueur de braise en bas */}
-        <div className="pointer-events-none absolute -bottom-24 -left-10 w-72 h-72 rounded-full bg-gradient-to-t from-ember-glow/40 via-ember/20 to-transparent blur-3xl" />
+      {/* Barre supérieure braise (desktop) — pleine largeur pour laisser plus d'espace au contenu */}
+      <header className="hidden lg:flex shrink-0 bg-[#1c1410] text-white/90 relative overflow-hidden items-center px-6 h-16">
+        {/* lueur de braise */}
+        <div className="pointer-events-none absolute -bottom-20 left-1/4 w-72 h-72 rounded-full bg-gradient-to-t from-ember-glow/30 via-ember/15 to-transparent blur-3xl" />
         <div className="pointer-events-none absolute -top-10 right-0 w-40 h-40 rounded-full bg-ember/10 blur-2xl" />
 
-        <div className="relative px-5 py-6 flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-ember-glow via-ember to-ember-deep flex items-center justify-center shadow-lg shadow-ember/40">
-            <Flame className="w-6 h-6 text-white" />
+        <div className="relative flex items-center gap-3 pr-6">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-ember-glow via-ember to-ember-deep flex items-center justify-center shadow-lg shadow-ember/40">
+            <Flame className="w-5 h-5 text-white" />
           </div>
           <div className="leading-tight">
-            <p className="font-display font-extrabold text-lg tracking-tight text-white">Fumiste Pro</p>
-            <p className="text-[11px] uppercase tracking-[0.2em] text-ember-glow/80 font-semibold">Gestion ramonage</p>
+            <p className="font-display font-extrabold text-base tracking-tight text-white">Fumiste Pro</p>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-ember-glow/80 font-semibold">Gestion ramonage</p>
           </div>
         </div>
 
-        <nav className="relative flex-1 px-3 py-3 space-y-1">
+        <nav className="relative flex items-center gap-1 flex-1">
           {NAV.map(({ to, label, icon: Icon }) => {
             const active = isActive(to);
             return (
@@ -50,7 +50,7 @@ export default function Layout() {
                 key={to}
                 to={to}
                 className={cn(
-                  "group flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium transition-all",
+                  "group flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all",
                   active
                     ? "bg-gradient-to-r from-ember to-ember-deep text-white shadow-lg shadow-ember/30"
                     : "text-white/55 hover:text-white hover:bg-white/5"
@@ -63,16 +63,14 @@ export default function Layout() {
           })}
         </nav>
 
-        <div className="relative p-3 border-t border-white/10">
-          <button
-            onClick={() => base44.auth.logout()}
-            className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium text-white/55 hover:text-white hover:bg-white/5 transition-colors"
-          >
-            <LogOut className="w-[18px] h-[18px]" />
-            Se déconnecter
-          </button>
-        </div>
-      </aside>
+        <button
+          onClick={() => base44.auth.logout()}
+          className="relative flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-medium text-white/55 hover:text-white hover:bg-white/5 transition-colors"
+        >
+          <LogOut className="w-[18px] h-[18px]" />
+          Se déconnecter
+        </button>
+      </header>
 
       {/* Mobile top bar */}
       <div className="flex-1 min-w-0 flex flex-col">

@@ -170,6 +170,8 @@ Deno.serve(async (req) => {
     }
 
     const result = { reminders: { candidates: 0, sent: 0 }, reviews: { candidates: 0, sent: 0 }, ramonage: { candidates: 0, sent: 0 }, etancheite: { candidates: 0, sent: 0 } };
+    // Explications par catégorie : pourquoi 0 e-mail (option éteinte, lien manquant, aucun RDV concerné).
+    const reasons = [];
 
     // Rappels d'intervention (J - days_before)
     if (settings.enabled !== false) {
@@ -180,23 +182,43 @@ Deno.serve(async (req) => {
         htmlTpl: settings.reminder_html || '<p>Bonjour {{client}}, rappel de votre intervention {{type}} le {{date}} à {{heure}}.</p>',
         logType: 'rappel',
       });
+      if (result.reminders.sent === 0) {
+        reasons.push(result.reminders.candidates === 0
+          ? `Rappels : aucun rendez-vous prévu dans ${daysBefore} jour(s).`
+          : `Rappels : ${result.reminders.candidates} rendez-vous concerné(s) mais aucun e-mail trouvé dans la description (ou déjà envoyé aujourd'hui).`);
+      }
+    } else {
+      reasons.push('Rappels : option désactivée dans vos réglages.');
     }
 
     // Demandes d'avis Google (J + review_days_after)
     if (settings.review_enabled) {
       const daysAfter = settings.review_days_after ?? 1;
-      result.reviews = await sendBatch({
-        targetDay: dayOffset(-daysAfter),
-        subjectTpl: settings.review_subject || 'Votre avis nous intéresse',
-        htmlTpl: settings.review_html || '<p>Bonjour {{client}}, <a href="{{lien_avis}}">laissez un avis</a>.</p>',
-        logType: 'avis',
-        extraVars: { '{{lien_avis}}': settings.google_review_link || '' },
-      });
+      if (!settings.google_review_link) {
+        reasons.push('Avis Google : aucun lien Google d\'avis renseigné dans vos réglages.');
+      } else {
+        result.reviews = await sendBatch({
+          targetDay: dayOffset(-daysAfter),
+          subjectTpl: settings.review_subject || 'Votre avis nous intéresse',
+          htmlTpl: settings.review_html || '<p>Bonjour {{client}}, <a href="{{lien_avis}}">laissez un avis</a>.</p>',
+          logType: 'avis',
+          extraVars: { '{{lien_avis}}': settings.google_review_link || '' },
+        });
+        if (result.reviews.sent === 0) {
+          reasons.push(result.reviews.candidates === 0
+            ? `Avis Google : aucun rendez-vous terminé il y a ${daysAfter} jour(s).`
+            : `Avis Google : ${result.reviews.candidates} rendez-vous concerné(s) mais aucun e-mail trouvé dans la description (ou déjà envoyé aujourd'hui).`);
+        }
+      }
+    } else {
+      reasons.push('Avis Google : option désactivée dans vos réglages.');
     }
 
     // Relances entretien (ramonage annuel / étanchéité triennale) basées sur les colonnes client
     const ramonageMonths = settings.followup_months ?? 12;
     const etancheiteMonths = settings.etancheite_followup_months ?? 36;
+    if (!settings.followup_enabled) reasons.push('Relance ramonage : option désactivée dans vos réglages.');
+    if (!settings.etancheite_followup_enabled) reasons.push('Relance étanchéité : option désactivée dans vos réglages.');
 
     for (const client of clients) {
       if (!client.email) continue;
@@ -239,13 +261,19 @@ Deno.serve(async (req) => {
     }
 
     const totalSent = result.reminders.sent + result.reviews.sent + result.ramonage.sent + result.etancheite.sent;
+    if (settings.followup_enabled && result.ramonage.sent === 0) {
+      reasons.push('Relance ramonage : aucun client dont le dernier ramonage dépasse le délai configuré.');
+    }
+    if (settings.etancheite_followup_enabled && result.etancheite.sent === 0) {
+      reasons.push('Relance étanchéité : aucun client dont le dernier test dépasse le délai configuré.');
+    }
 
     // Marque l'exécution du jour (anti-doublon de l'envoi auto à l'ouverture).
     if (settings.id) {
       await base44.asServiceRole.entities.ReminderSettings.update(settings.id, { auto_send_last_run: todayCheck });
     }
 
-    return Response.json({ ok: true, totalSent, ...result });
+    return Response.json({ ok: true, totalSent, reasons, ...result });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
