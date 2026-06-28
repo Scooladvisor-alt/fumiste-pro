@@ -11,9 +11,10 @@ export default function SendEmailsNow() {
     setSending(true);
     setResult(null);
     try {
-      // Déclenche exactement le même traitement que le passage quotidien automatique :
-      // chaque module (rappels, avis, relance ramonage) ne traite que sa propre fenêtre de dates.
-      const res = await base44.functions.invoke("sendMyEmails", {});
+      // Envoi MANUEL (bouton de test) : même traitement que le passage quotidien
+      // (chaque module ne traite que sa propre fenêtre de dates), mais force=true
+      // pour ignorer l'anti-doublon du jour et bien (re)envoyer aux événements éligibles.
+      const res = await base44.functions.invoke("sendMyEmails", { force: true });
       if (res.data?.error) {
         setResult({ error: res.data.error });
       } else {
