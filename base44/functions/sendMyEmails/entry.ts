@@ -41,10 +41,23 @@ function formatFr(dateStr) {
   return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
+// Jour calendaire (YYYY-MM-DD) d'une date, exprimé en heure de Paris.
+// Indispensable : les rendez-vous sont stockés tantôt en UTC, tantôt avec offset,
+// donc un simple .slice(0,10) sur la chaîne brute se trompe de jour.
+function parisDay(dateInput) {
+  const d = dateInput instanceof Date ? dateInput : new Date(dateInput);
+  // en-CA => format YYYY-MM-DD
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Paris',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(d);
+}
+
+// Jour cible (heure de Paris) décalé de `days` jours par rapport à aujourd'hui.
 function dayOffset(days) {
   const d = new Date();
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
+  d.setDate(d.getDate() + days);
+  return parisDay(d);
 }
 
 function isDue(dateStr, months) {
@@ -98,9 +111,11 @@ Deno.serve(async (req) => {
 
     const today = new Date().toISOString().slice(0, 10);
 
-    // Anti-doublon : e-mails déjà envoyés aujourd'hui (rappel / avis) à un client donné.
+    // Anti-doublon : e-mails déjà envoyés aujourd'hui (rappel / avis) à une adresse donnée.
+    // Basé sur le destinataire e-mail (unique par RDV) et non sur client_id, car les
+    // rendez-vous synchronisés depuis Google n'ont pas de client_id (=> sinon un seul envoi).
     const todaysLogs = await base44.entities.CommunicationLog.filter({ sent_date: today });
-    const sentTodayKey = new Set(todaysLogs.map((l) => `${l.type}:${l.client_id || ''}`));
+    const sentTodayKey = new Set(todaysLogs.map((l) => `${l.type}:${(l.to || '').toLowerCase()}`));
 
     async function sendEmail({ to, subject, html }) {
       const raw = buildMime({ to, subject, html });
@@ -113,14 +128,15 @@ Deno.serve(async (req) => {
     }
 
     async function sendBatch({ targetDay, subjectTpl, htmlTpl, logType, extraVars = {} }) {
-      const targets = appointments.filter((a) => a.start && a.start.slice(0, 10) === targetDay);
+      const targets = appointments.filter((a) => a.start && parisDay(a.start) === targetDay);
       let sent = 0;
       for (const appt of targets) {
         const client = clientMap[appt.client_id];
         const email = extractEmail(appt.notes || appt.description);
         if (!email) continue;
-        // Déjà envoyé aujourd'hui à ce client pour ce type ? on saute.
-        if (sentTodayKey.has(`${logType}:${appt.client_id || ''}`)) continue;
+        // Déjà envoyé aujourd'hui à cette adresse pour ce type ? on saute.
+        const dedupKey = `${logType}:${email.toLowerCase()}`;
+        if (sentTodayKey.has(dedupKey)) continue;
         const dt = new Date(appt.start);
         const vars = {
           '{{client}}': client?.full_name || '',
@@ -133,6 +149,7 @@ Deno.serve(async (req) => {
         const html = applyVars(htmlTpl, vars);
         if (await sendEmail({ to: email, subject, html })) {
           sent += 1;
+          sentTodayKey.add(dedupKey);
           await base44.entities.CommunicationLog.create({
             type: logType,
             channel: 'email',
