@@ -1,7 +1,5 @@
 import { Settings } from "lucide-react";
 import InterventionTypes from "@/components/settings/InterventionTypes";
-import GoogleSync from "@/components/settings/GoogleSync";
-import GmailConnect from "@/components/settings/GmailConnect";
 import SendEmailsNow from "@/components/settings/SendEmailsNow";
 import CommunicationSettings from "@/components/settings/CommunicationSettings";
 
@@ -14,8 +12,6 @@ export default function Parametres() {
         </div>
         <h1 className="font-display font-bold text-xl md:text-2xl">Réglages</h1>
       </div>
-      <GoogleSync />
-      <GmailConnect />
       <SendEmailsNow />
       <CommunicationSettings />
       <InterventionTypes />
