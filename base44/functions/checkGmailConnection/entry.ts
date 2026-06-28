@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
-const GMAIL_CONNECTOR_ID = '6a32cc1aff5b6c91aa8e022a';
-
+// Mode mono-utilisateur : on utilise l'intégration native PARTAGÉE Gmail
+// (le compte Google du propriétaire de l'app, connecté une seule fois côté Base44).
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
     }
 
     try {
-      const conn = await base44.asServiceRole.connectors.getCurrentAppUserConnection(GMAIL_CONNECTOR_ID);
+      const conn = await base44.asServiceRole.connectors.getConnection('gmail');
       const connected = !!conn?.accessToken;
       return Response.json({ connected });
     } catch {

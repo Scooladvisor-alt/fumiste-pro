@@ -66,10 +66,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Connexion Gmail de l'utilisateur courant
+    // Mode mono-utilisateur : connexion native PARTAGÉE Gmail (compte Google du propriétaire de l'app).
     let accessToken;
     try {
-      const conn = await base44.asServiceRole.connectors.getCurrentAppUserConnection(GMAIL_CONNECTOR_ID);
+      const conn = await base44.asServiceRole.connectors.getConnection('gmail');
       accessToken = conn?.accessToken;
     } catch {
       accessToken = null;

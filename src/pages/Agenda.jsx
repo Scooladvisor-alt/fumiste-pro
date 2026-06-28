@@ -17,7 +17,6 @@ import { useClients, useAppointments, useInterventionTypes, useRefreshData } fro
 import MonthView from "@/components/agenda/MonthView";
 import TimeGridView from "@/components/agenda/TimeGridView";
 import AppointmentDialog from "@/components/agenda/AppointmentDialog";
-import ReconnectCalendarBanner from "@/components/agenda/ReconnectCalendarBanner";
 
 const VIEWS = [
   { key: "day", label: "Jour" },
@@ -38,16 +37,13 @@ export default function Agenda() {
   const [slotStart, setSlotStart] = useState(null);
   const [slotEnd, setSlotEnd] = useState(null);
   const [syncing, setSyncing] = useState(false);
-  const [needsReconnect, setNeedsReconnect] = useState(false);
 
   const handleSync = async () => {
     setSyncing(true);
     try {
-      const res = await base44.functions.invoke("syncFromGoogle", {});
-      setNeedsReconnect(res?.data?.status === "reconnect_required");
-    } catch (e) {
-      // 403 => reconnexion nécessaire
-      if (e?.response?.data?.status === "reconnect_required") setNeedsReconnect(true);
+      await base44.functions.invoke("syncFromGoogle", {});
+    } catch {
+      // ignore : la synchro reprendra au prochain cycle
     }
     await refresh();
     setSyncing(false);
@@ -56,11 +52,10 @@ export default function Agenda() {
   // Synchro silencieuse (sans spinner) pour le polling automatique
   const silentSync = async () => {
     try {
-      const res = await base44.functions.invoke("syncFromGoogle", {});
-      setNeedsReconnect(res?.data?.status === "reconnect_required");
+      await base44.functions.invoke("syncFromGoogle", {});
       await refresh();
-    } catch (e) {
-      if (e?.response?.data?.status === "reconnect_required") setNeedsReconnect(true);
+    } catch {
+      // ignore
     }
   };
 
@@ -182,12 +177,6 @@ export default function Agenda() {
           </Button>
         </div>
       </div>
-
-      {needsReconnect && (
-        <ReconnectCalendarBanner
-          onReconnected={() => { setNeedsReconnect(false); handleSync(); }}
-        />
-      )}
 
       {/* Views */}
       <div className="flex-1 min-h-0 bg-card rounded-2xl border border-border overflow-hidden">

@@ -1,55 +1,23 @@
 import { useEffect, useState } from "react";
-import { Mail, CheckCircle2, Loader2 } from "lucide-react";
+import { Mail, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { Button } from "@/components/ui/button";
 
-const GMAIL_CONNECTOR_ID = "6a32cc1aff5b6c91aa8e022a";
-
+// Mode mono-utilisateur : Gmail est connecté une seule fois au compte Google du
+// propriétaire de l'app (intégration native partagée Base44). Cet écran affiche
+// simplement l'état de cette connexion — aucune action requise.
 export default function GmailConnect() {
   const [status, setStatus] = useState("loading"); // loading | connected | disconnected
-  const [connecting, setConnecting] = useState(false);
-
-  const check = async () => {
-    try {
-      const res = await base44.functions.invoke("checkGmailConnection", {});
-      setStatus(res.data?.connected ? "connected" : "disconnected");
-    } catch {
-      setStatus("disconnected");
-    }
-  };
 
   useEffect(() => {
-    check();
-  }, []);
-
-  const connect = async () => {
-    setConnecting(true);
-    // Ouvrir le popup IMMÉDIATEMENT (dans le geste du clic) pour éviter qu'il
-    // soit bloqué et que l'OAuth s'ouvre dans l'onglet principal (ce qui
-    // déconnecterait l'utilisateur du logiciel).
-    const popup = window.open("about:blank", "_blank", "width=520,height=640");
-    try {
-      const url = await base44.connectors.connectAppUser(GMAIL_CONNECTOR_ID);
-      if (popup) popup.location.href = url;
-      else window.open(url, "_blank");
-    } catch {
-      if (popup) popup.close();
-      setConnecting(false);
-      return;
-    }
-    const timer = setInterval(() => {
-      if (!popup || popup.closed) {
-        clearInterval(timer);
-        check();
-        setConnecting(false);
+    (async () => {
+      try {
+        const res = await base44.functions.invoke("checkGmailConnection", {});
+        setStatus(res.data?.connected ? "connected" : "disconnected");
+      } catch {
+        setStatus("disconnected");
       }
-    }, 500);
-  };
-
-  const disconnect = async () => {
-    await base44.connectors.disconnectAppUser(GMAIL_CONNECTOR_ID);
-    setStatus("disconnected");
-  };
+    })();
+  }, []);
 
   return (
     <div className="bg-card rounded-2xl border border-border p-5">
@@ -60,8 +28,8 @@ export default function GmailConnect() {
         <h2 className="font-display font-bold text-lg">Gmail</h2>
       </div>
       <p className="text-sm text-muted-foreground mb-4">
-        Connectez votre compte Gmail pour que les rappels d'intervention et les demandes d'avis
-        Google soient envoyés automatiquement depuis votre adresse.
+        Les rappels d'intervention, les demandes d'avis Google et les relances
+        d'entretien sont envoyés automatiquement depuis votre adresse Gmail.
       </p>
 
       {status === "loading" ? (
@@ -70,20 +38,15 @@ export default function GmailConnect() {
           Vérification…
         </div>
       ) : status === "connected" ? (
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="inline-flex items-center gap-2 text-sm font-medium text-emerald-600 bg-emerald-50 rounded-lg px-3 py-2">
-            <CheckCircle2 className="w-4 h-4" />
-            Connecté
-          </div>
-          <Button variant="ghost" size="sm" onClick={disconnect} className="text-muted-foreground">
-            Déconnecter
-          </Button>
+        <div className="inline-flex items-center gap-2 text-sm font-medium text-emerald-600 bg-emerald-50 rounded-lg px-3 py-2">
+          <CheckCircle2 className="w-4 h-4" />
+          Connecté
         </div>
       ) : (
-        <Button onClick={connect} disabled={connecting} className="gap-2">
-          {connecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
-          Connecter Gmail
-        </Button>
+        <div className="inline-flex items-center gap-2 text-sm font-medium text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
+          <AlertCircle className="w-4 h-4" />
+          Gmail non connecté
+        </div>
       )}
     </div>
   );

@@ -1,80 +1,23 @@
 import { useEffect, useState } from "react";
-import { Calendar, CheckCircle2, Loader2 } from "lucide-react";
+import { Calendar, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { Button } from "@/components/ui/button";
 
-const CALENDAR_CONNECTOR_ID = "6a32cbfde2927ef1458ec237";
-
+// Mode mono-utilisateur : Google Calendar est connecté une seule fois au compte
+// Google du propriétaire de l'app (intégration native partagée Base44).
+// Cet écran affiche simplement l'état de cette connexion — aucune action requise.
 export default function GoogleSync() {
   const [status, setStatus] = useState("loading"); // loading | connected | disconnected
-  const [connecting, setConnecting] = useState(false);
-
-  const check = async () => {
-    try {
-      const res = await base44.functions.invoke("checkCalendarConnection", {});
-      setStatus(res.data?.connected ? "connected" : "disconnected");
-    } catch {
-      setStatus("disconnected");
-    }
-  };
 
   useEffect(() => {
-    check();
+    (async () => {
+      try {
+        const res = await base44.functions.invoke("checkCalendarConnection", {});
+        setStatus(res.data?.connected ? "connected" : "disconnected");
+      } catch {
+        setStatus("disconnected");
+      }
+    })();
   }, []);
-
-  const connect = async () => {
-    setConnecting(true);
-    // Ouvrir le popup IMMÉDIATEMENT (dans le geste du clic) pour éviter qu'il
-    // soit bloqué et que l'OAuth s'ouvre dans l'onglet principal (ce qui
-    // déconnecterait l'utilisateur du logiciel).
-    const popup = window.open("about:blank", "_blank", "width=520,height=640");
-    try {
-      const url = await base44.connectors.connectAppUser(CALENDAR_CONNECTOR_ID);
-      if (popup) popup.location.href = url;
-      else window.open(url, "_blank");
-    } catch {
-      if (popup) popup.close();
-      setConnecting(false);
-      return;
-    }
-    const timer = setInterval(() => {
-      if (!popup || popup.closed) {
-        clearInterval(timer);
-        check();
-        setConnecting(false);
-      }
-    }, 500);
-  };
-
-  const disconnect = async () => {
-    await base44.connectors.disconnectAppUser(CALENDAR_CONNECTOR_ID);
-    setStatus("disconnected");
-  };
-
-  // Reconnexion propre : on déconnecte d'abord pour forcer Google à régénérer
-  // un jeton neuf (sinon l'ancien consentement périmé est réutilisé), puis on
-  // relance le flux de connexion dans le même geste de clic.
-  const reconnect = async () => {
-    setConnecting(true);
-    const popup = window.open("about:blank", "_blank", "width=520,height=640");
-    try {
-      await base44.connectors.disconnectAppUser(CALENDAR_CONNECTOR_ID);
-      const url = await base44.connectors.connectAppUser(CALENDAR_CONNECTOR_ID);
-      if (popup) popup.location.href = url;
-      else window.open(url, "_blank");
-    } catch {
-      if (popup) popup.close();
-      setConnecting(false);
-      return;
-    }
-    const timer = setInterval(() => {
-      if (!popup || popup.closed) {
-        clearInterval(timer);
-        check();
-        setConnecting(false);
-      }
-    }, 500);
-  };
 
   return (
     <div className="bg-card rounded-2xl border border-border p-5">
@@ -85,8 +28,8 @@ export default function GoogleSync() {
         <h2 className="font-display font-bold text-lg">Google Calendar</h2>
       </div>
       <p className="text-sm text-muted-foreground mb-4">
-        Connectez votre Google Calendar pour que vos rendez-vous clients soient
-        synchronisés automatiquement avec votre agenda Google.
+        Vos rendez-vous sont synchronisés automatiquement, dans les deux sens, avec
+        votre agenda Google.
       </p>
 
       {status === "loading" ? (
@@ -95,24 +38,15 @@ export default function GoogleSync() {
           Vérification…
         </div>
       ) : status === "connected" ? (
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="inline-flex items-center gap-2 text-sm font-medium text-emerald-600 bg-emerald-50 rounded-lg px-3 py-2">
-            <CheckCircle2 className="w-4 h-4" />
-            Connecté et synchronisé
-          </div>
-          <Button variant="outline" size="sm" onClick={reconnect} disabled={connecting} className="gap-2">
-            {connecting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-            Reconnecter
-          </Button>
-          <Button variant="ghost" size="sm" onClick={disconnect} className="text-muted-foreground">
-            Déconnecter
-          </Button>
+        <div className="inline-flex items-center gap-2 text-sm font-medium text-emerald-600 bg-emerald-50 rounded-lg px-3 py-2">
+          <CheckCircle2 className="w-4 h-4" />
+          Connecté et synchronisé
         </div>
       ) : (
-        <Button onClick={connect} disabled={connecting} className="gap-2">
-          {connecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />}
-          Connecter Google Calendar
-        </Button>
+        <div className="inline-flex items-center gap-2 text-sm font-medium text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
+          <AlertCircle className="w-4 h-4" />
+          Agenda Google non connecté
+        </div>
       )}
     </div>
   );

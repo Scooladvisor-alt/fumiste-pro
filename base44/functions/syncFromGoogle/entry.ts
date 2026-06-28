@@ -14,10 +14,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Token du calendrier de l'utilisateur courant (son propre compte Google)
+    // Mode mono-utilisateur : connexion native PARTAGÉE (compte Google du propriétaire de l'app).
     let accessToken;
     try {
-      const conn = await base44.asServiceRole.connectors.getCurrentAppUserConnection(CALENDAR_CONNECTOR_ID);
+      const conn = await base44.asServiceRole.connectors.getConnection('googlecalendar');
       accessToken = conn?.accessToken;
     } catch (e) {
       console.log('Erreur récupération connexion calendrier:', e.message);

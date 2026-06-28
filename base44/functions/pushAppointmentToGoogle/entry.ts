@@ -16,9 +16,10 @@ Deno.serve(async (req) => {
 
     const { appointmentId, action, googleEventId } = await req.json();
 
+    // Mode mono-utilisateur : connexion native PARTAGÉE (compte Google du propriétaire de l'app).
     let accessToken;
     try {
-      const conn = await base44.asServiceRole.connectors.getCurrentAppUserConnection(CALENDAR_CONNECTOR_ID);
+      const conn = await base44.asServiceRole.connectors.getConnection('googlecalendar');
       accessToken = conn?.accessToken;
     } catch {
       accessToken = null;
