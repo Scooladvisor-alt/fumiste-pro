@@ -15,16 +15,25 @@ export default function SendEmailsNow() {
       // (chaque module ne traite que sa propre fenêtre de dates), mais force=true
       // pour ignorer l'anti-doublon du jour et bien (re)envoyer aux événements éligibles.
       const res = await base44.functions.invoke("sendMyEmails", { force: true });
-      if (res.data?.error) {
-        setResult({ error: res.data.error });
+      // La réponse de la fonction peut arriver soit dans res.data (Axios), soit directement
+      // dans res selon le contexte ; on lit les deux pour ne JAMAIS rater le compteur.
+      const payload = res?.data ?? res ?? {};
+      if (payload.error) {
+        setResult({ error: payload.error });
       } else {
         setResult({
-          totalSent: res.data?.totalSent ?? 0,
-          reasons: res.data?.reasons || [],
+          totalSent: payload.totalSent ?? 0,
+          reasons: payload.reasons || [],
         });
       }
     } catch (e) {
-      setResult({ error: e?.response?.data?.error || "send_failed" });
+      // Même en cas d'exception, la fonction a peut-être renvoyé un résultat exploitable.
+      const payload = e?.response?.data;
+      if (payload && payload.totalSent !== undefined) {
+        setResult({ totalSent: payload.totalSent, reasons: payload.reasons || [] });
+      } else {
+        setResult({ error: payload?.error || "send_failed" });
+      }
     }
     setSending(false);
   };
