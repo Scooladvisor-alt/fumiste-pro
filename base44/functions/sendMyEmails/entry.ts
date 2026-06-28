@@ -95,6 +95,11 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const isAuto = body?.auto === true;
 
+    // Base de l'URL des fonctions, pour construire le lien du bouton de confirmation.
+    const appId = Deno.env.get('BASE44_APP_ID');
+    const origin = new URL(req.url).origin;
+    const confirmBase = `${origin}/api/apps/${appId}/functions/confirmAttendance`;
+
     // Données de l'utilisateur (RLS : filtrées sur created_by_id)
     const settingsList = await base44.asServiceRole.entities.ReminderSettings.filter({ created_by_id: user.id });
     const settings = settingsList[0] || {};
@@ -143,6 +148,7 @@ Deno.serve(async (req) => {
           '{{date}}': dt.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
           '{{heure}}': dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
           '{{type}}': appt.intervention_type || '',
+          '{{lien_confirmation}}': `${confirmBase}?appt=${appt.id}`,
           ...extraVars,
         };
         const subject = applyVars(subjectTpl, vars);

@@ -11,7 +11,7 @@ export default function AiEmailGenerator({ variables, onResult }) {
   const [open, setOpen] = useState(false);
   const [instructions, setInstructions] = useState("");
   const [brand, setBrand] = useState("");
-  const [links, setLinks] = useState("");
+  const [confirmButton, setConfirmButton] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -31,10 +31,13 @@ ${instructions}
 CHARTE GRAPHIQUE À RESPECTER :
 ${brand || "Aucune précisée — utilise un style sobre et professionnel."}
 
-LIENS À INTÉGRER (boutons / liens cliquables) :
-${links || "Aucun lien fourni."}
+${confirmButton
+  ? `BOUTON DE CONFIRMATION DE PRÉSENCE (OBLIGATOIRE) :
+Intègre un bouton bien visible (table HTML, padding généreux, couleur d'accent) dont le href est EXACTEMENT la variable {{lien_confirmation}} (ne remplace pas cette variable, laisse-la telle quelle).
+Libellé du bouton : "Je confirme ma présence". Place-le clairement dans le corps de l'e-mail avec une phrase invitant le client à confirmer sa présence en un clic.`
+  : "Pas de bouton de confirmation à intégrer."}
 
-VARIABLES DISPONIBLES (à insérer telles quelles, elles seront remplacées automatiquement) : ${varList}.
+VARIABLES DISPONIBLES (à insérer telles quelles, elles seront remplacées automatiquement) : ${varList}${confirmButton ? ", {{lien_confirmation}} (URL du bouton de confirmation de présence)" : ""}.
 Utilise les variables pertinentes (par exemple {{client}} pour personnaliser).
 
 Réponds STRICTEMENT au format demandé : un objet d'e-mail percutant et le code HTML complet.`;
@@ -99,14 +102,21 @@ Réponds STRICTEMENT au format demandé : un objet d'e-mail percutant et le code
             />
           </div>
 
-          <div className="space-y-1.5">
-            <Label>Liens à intégrer (optionnel)</Label>
-            <Input
-              value={links}
-              onChange={(e) => setLinks(e.target.value)}
-              placeholder="Ex : Réserver → https://www.abm77.fr/reservation"
+          <label className="flex items-start gap-3 p-3 rounded-lg border border-border bg-card cursor-pointer">
+            <input
+              type="checkbox"
+              checked={confirmButton}
+              onChange={(e) => setConfirmButton(e.target.checked)}
+              className="mt-0.5 w-4 h-4 accent-[hsl(var(--ember))] shrink-0"
             />
-          </div>
+            <span>
+              <span className="block text-sm font-medium">Bouton « Je confirme ma présence »</span>
+              <span className="block text-xs text-muted-foreground">
+                Ajoute un bouton dans l'e-mail. Quand le client clique, sa présence est
+                enregistrée et la confirmation apparaît dans la description du rendez-vous de l'agenda.
+              </span>
+            </span>
+          </label>
 
           {error && <p className="text-xs text-destructive">{error}</p>}
 

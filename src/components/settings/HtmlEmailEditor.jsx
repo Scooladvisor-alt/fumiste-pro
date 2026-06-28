@@ -11,6 +11,7 @@ const VARIABLES = [
   { token: "{{heure}}", label: "Heure de l'intervention" },
   { token: "{{type}}", label: "Type d'intervention" },
   { token: "{{lien_avis}}", label: "Lien avis Google" },
+  { token: "{{lien_confirmation}}", label: "Lien de confirmation de présence" },
 ];
 
 // Valeurs de démonstration pour l'aperçu
