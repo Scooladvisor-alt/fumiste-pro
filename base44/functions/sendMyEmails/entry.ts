@@ -94,15 +94,28 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const isAuto = body?.auto === true;
+    // force = true : le bouton "Envoyer maintenant" ignore l'anti-doublon du jour (utile pour tester / renvoyer).
+    const force = body?.force === true;
 
     // Base de l'URL des fonctions, pour construire le lien du bouton de confirmation.
     const appId = Deno.env.get('BASE44_APP_ID');
     const origin = new URL(req.url).origin;
     const confirmBase = `${origin}/api/apps/${appId}/functions/confirmAttendance`;
 
-    // Données de l'utilisateur (RLS : filtrées sur created_by_id)
-    const settingsList = await base44.asServiceRole.entities.ReminderSettings.filter({ created_by_id: user.id });
-    const settings = settingsList[0] || {};
+    // Site mono-utilisateur : on utilise TOUJOURS la fiche de réglages la plus complète,
+    // peu importe le compte connecté (évite de tomber sur une fiche vide créée par un autre compte de test).
+    const allSettings = await base44.asServiceRole.entities.ReminderSettings.list();
+    function settingsScore(s) {
+      let n = 0;
+      if (s.review_enabled) n += 1;
+      if (s.google_review_link) n += 1;
+      if (s.followup_enabled) n += 1;
+      if (s.company_name) n += 1;
+      if (s.reminder_html) n += 1;
+      if (s.onboarding_completed) n += 1;
+      return n;
+    }
+    const settings = allSettings.slice().sort((a, b) => settingsScore(b) - settingsScore(a))[0] || {};
 
     const todayCheck = new Date().toISOString().slice(0, 10);
     // Envoi AUTO : maximum une fois par jour. Si déjà fait aujourd'hui, on stoppe.
@@ -139,9 +152,9 @@ Deno.serve(async (req) => {
         const client = clientMap[appt.client_id];
         const email = extractEmail(appt.notes || appt.description);
         if (!email) continue;
-        // Déjà envoyé aujourd'hui à cette adresse pour ce type ? on saute.
+        // Déjà envoyé aujourd'hui à cette adresse pour ce type ? on saute (sauf renvoi forcé).
         const dedupKey = `${logType}:${email.toLowerCase()}`;
-        if (sentTodayKey.has(dedupKey)) continue;
+        if (!force && sentTodayKey.has(dedupKey)) continue;
         const dt = new Date(appt.start);
         const vars = {
           '{{client}}': client?.full_name || '',
@@ -224,7 +237,7 @@ Deno.serve(async (req) => {
       if (!client.email) continue;
 
       if (settings.followup_enabled && isDue(client.last_ramonage_date, ramonageMonths)) {
-        const alreadySent = client.followup_sent_date && client.followup_sent_date >= client.last_ramonage_date;
+        const alreadySent = !force && client.followup_sent_date && client.followup_sent_date >= client.last_ramonage_date;
         if (!alreadySent) {
           result.ramonage.candidates += 1;
           const v = { '{{client}}': client.full_name || '', '{{date_dernier_ramonage}}': formatFr(client.last_ramonage_date) };
@@ -242,7 +255,7 @@ Deno.serve(async (req) => {
       }
 
       if (settings.etancheite_followup_enabled && isDue(client.last_etancheite_date, etancheiteMonths)) {
-        const alreadySent = client.etancheite_followup_sent_date && client.etancheite_followup_sent_date >= client.last_etancheite_date;
+        const alreadySent = !force && client.etancheite_followup_sent_date && client.etancheite_followup_sent_date >= client.last_etancheite_date;
         if (!alreadySent) {
           result.etancheite.candidates += 1;
           const v = { '{{client}}': client.full_name || '', '{{date_dernier_test}}': formatFr(client.last_etancheite_date) };
