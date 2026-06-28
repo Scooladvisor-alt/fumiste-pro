@@ -122,8 +122,10 @@ Deno.serve(async (req) => {
     if (isAuto && settings.auto_send_last_run === todayCheck) {
       return Response.json({ ok: true, skipped: 'already_sent_today', totalSent: 0 });
     }
-    const appointments = await base44.entities.Appointment.list();
-    const clients = await base44.entities.Client.list();
+    // Mono-utilisateur : on lit TOUTES les données en service role (comme les réglages et Gmail),
+    // pour que le clic de l'utilisateur voie les mêmes rendez-vous/clients quel que soit le compte créateur.
+    const appointments = await base44.asServiceRole.entities.Appointment.list();
+    const clients = await base44.asServiceRole.entities.Client.list();
     const clientMap = {};
     clients.forEach((c) => { clientMap[c.id] = c; });
 
@@ -132,7 +134,7 @@ Deno.serve(async (req) => {
     // Anti-doublon : e-mails déjà envoyés aujourd'hui (rappel / avis) à une adresse donnée.
     // Basé sur le destinataire e-mail (unique par RDV) et non sur client_id, car les
     // rendez-vous synchronisés depuis Google n'ont pas de client_id (=> sinon un seul envoi).
-    const todaysLogs = await base44.entities.CommunicationLog.filter({ sent_date: today });
+    const todaysLogs = await base44.asServiceRole.entities.CommunicationLog.filter({ sent_date: today });
     const sentTodayKey = new Set(todaysLogs.map((l) => `${l.type}:${(l.to || '').toLowerCase()}`));
 
     async function sendEmail({ to, subject, html }) {
@@ -169,7 +171,7 @@ Deno.serve(async (req) => {
         if (await sendEmail({ to: email, subject, html })) {
           sent += 1;
           sentTodayKey.add(dedupKey);
-          await base44.entities.CommunicationLog.create({
+          await base44.asServiceRole.entities.CommunicationLog.create({
             type: logType,
             channel: 'email',
             client_id: appt.client_id || '',
@@ -245,8 +247,8 @@ Deno.serve(async (req) => {
           const html = applyVars(settings.followup_html, v);
           if (await sendEmail({ to: client.email, subject, html })) {
             result.ramonage.sent += 1;
-            await base44.entities.Client.update(client.id, { followup_sent_date: today });
-            await base44.entities.CommunicationLog.create({
+            await base44.asServiceRole.entities.Client.update(client.id, { followup_sent_date: today });
+            await base44.asServiceRole.entities.CommunicationLog.create({
               type: 'relance_ramonage', channel: 'email', client_id: client.id,
               client_name: client.full_name || '', to: client.email, sent_date: today,
             });
@@ -263,8 +265,8 @@ Deno.serve(async (req) => {
           const html = applyVars(settings.etancheite_followup_html, v);
           if (await sendEmail({ to: client.email, subject, html })) {
             result.etancheite.sent += 1;
-            await base44.entities.Client.update(client.id, { etancheite_followup_sent_date: today });
-            await base44.entities.CommunicationLog.create({
+            await base44.asServiceRole.entities.Client.update(client.id, { etancheite_followup_sent_date: today });
+            await base44.asServiceRole.entities.CommunicationLog.create({
               type: 'relance_etancheite', channel: 'email', client_id: client.id,
               client_name: client.full_name || '', to: client.email, sent_date: today,
             });
