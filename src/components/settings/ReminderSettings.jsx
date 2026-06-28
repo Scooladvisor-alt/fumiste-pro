@@ -14,12 +14,14 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { useReminderSettings } from "@/hooks/useReminderSettings";
 import HtmlEmailEditor from "./HtmlEmailEditor";
+import ConfirmationButtonHelper from "./ConfirmationButtonHelper";
 
 const REMINDER_VARS = [
   { token: "{{client}}", label: "Nom du client" },
   { token: "{{date}}", label: "Date de l'intervention" },
   { token: "{{heure}}", label: "Heure de l'intervention" },
   { token: "{{type}}", label: "Type d'intervention" },
+  { token: "{{lien_confirmation}}", label: "Lien de confirmation de présence" },
 ];
 
 export default function ReminderSettings() {
@@ -83,6 +85,9 @@ export default function ReminderSettings() {
       </div>
 
       <div className="py-4 border-t border-border">
+        <div className="mb-4">
+          <ConfirmationButtonHelper />
+        </div>
         <HtmlEmailEditor
           subject={settings.reminder_subject}
           html={settings.reminder_html}
