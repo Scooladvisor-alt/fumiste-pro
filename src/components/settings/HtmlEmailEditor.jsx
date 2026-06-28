@@ -3,6 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import AiEmailGenerator from "@/components/settings/AiEmailGenerator";
 
 const VARIABLES = [
   { token: "{{client}}", label: "Nom du client" },
@@ -48,6 +49,14 @@ export default function HtmlEmailEditor({
 
   return (
     <div className="space-y-3">
+      <AiEmailGenerator
+        variables={variables}
+        onResult={({ subject: s, html: h }) => {
+          onSubjectChange(s);
+          onHtmlChange(h);
+        }}
+      />
+
       <div className="space-y-1.5">
         <Label>Objet de l'e-mail</Label>
         <Input
