@@ -57,33 +57,35 @@ export default function Dashboard() {
       </div>
 
       {/* Section : suivi des communications */}
-      <div className="flex items-center gap-2.5 mb-3 px-1">
-        <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-          <BarChart3 className="w-[18px] h-[18px]" />
-        </div>
-        <div>
-          <h2 className="font-display font-bold text-lg leading-tight">Tour de contrôle</h2>
-          <p className="text-xs text-muted-foreground">Vos communications automatiques en un coup d'œil.</p>
-        </div>
-      </div>
-      <div className="bg-card rounded-2xl border border-border p-5 mb-8 shadow-sm">
-        <div className="flex items-center justify-end mb-5">
+      <section className="mb-8">
+        <div className="flex items-end justify-between gap-3 mb-3 flex-wrap px-1">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <BarChart3 className="w-[18px] h-[18px]" />
+            </div>
+            <div>
+              <h2 className="font-display font-bold text-lg leading-tight">Tour de contrôle</h2>
+              <p className="text-xs text-muted-foreground">Vos communications automatiques en un coup d'œil.</p>
+            </div>
+          </div>
           <PeriodFilter value={period} onChange={setPeriod} />
         </div>
         <CommunicationStats counts={counts} total={total} />
-      </div>
+      </section>
 
       {/* Section : prochains rendez-vous */}
-      <div className="flex items-center gap-2.5 mb-3 px-1">
-        <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-          <CalendarClock className="w-[18px] h-[18px]" />
+      <section>
+        <div className="flex items-center gap-2.5 mb-3 px-1">
+          <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <CalendarClock className="w-[18px] h-[18px]" />
+          </div>
+          <div>
+            <h2 className="font-display font-bold text-lg leading-tight">Votre journée</h2>
+            <p className="text-xs text-muted-foreground">Les interventions à venir, prêtes à être appelées.</p>
+          </div>
         </div>
-        <div>
-          <h2 className="font-display font-bold text-lg leading-tight">Votre journée</h2>
-          <p className="text-xs text-muted-foreground">Les interventions à venir, prêtes à être appelées.</p>
-        </div>
-      </div>
-      <UpcomingAppointments appointments={appointments} clients={clients} />
+        <UpcomingAppointments appointments={appointments} clients={clients} />
+      </section>
     </div>
   );
 }
