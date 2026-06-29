@@ -5,6 +5,7 @@ import CommunicationSettings from "@/components/settings/CommunicationSettings";
 import CompanyNameSettings from "@/components/settings/CompanyNameSettings";
 import DailySendTime from "@/components/settings/DailySendTime";
 import AgendaHours from "@/components/settings/AgendaHours";
+import GmailConnectionStatus from "@/components/settings/GmailConnectionStatus";
 
 export default function Parametres() {
   return (
@@ -16,6 +17,7 @@ export default function Parametres() {
         <h1 className="font-display font-bold text-xl md:text-2xl">Réglages</h1>
       </div>
       <CompanyNameSettings />
+      <GmailConnectionStatus />
       <AgendaHours />
       <DailySendTime />
       <SendEmailsNow />
