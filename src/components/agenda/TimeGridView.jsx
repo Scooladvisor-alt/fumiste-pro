@@ -4,39 +4,44 @@ import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import EventBadges from "./EventBadges";
 
-const HOURS = Array.from({ length: 24 }, (_, i) => i); // 0h -> 23h
 const HOUR_HEIGHT = 56;
-const START_HOUR = 0;
 const SNAP_MIN = 15;
 
-function minutesToTop(min) {
-  return (min - START_HOUR * 60) * (HOUR_HEIGHT / 60);
-}
+export default function TimeGridView({ date, mode, appointments, onSelectSlot, onSelectEvent, onDropEvent, onResizeEvent, startHour = 6, endHour = 20 }) {
+  const START_HOUR = startHour;
+  const END_HOUR = endHour;
+  const HOURS = Array.from({ length: Math.max(1, END_HOUR - START_HOUR) }, (_, i) => START_HOUR + i);
+  const HOUR_COUNT = HOURS.length;
+  const MIN_OF_DAY = START_HOUR * 60;
+  const MAX_OF_DAY = END_HOUR * 60;
 
-function eventStyle(a) {
-  const start = new Date(a.start);
-  const end = new Date(a.end);
-  const top = minutesToTop(start.getHours() * 60 + start.getMinutes());
-  const height = Math.max(24, differenceInMinutes(end, start) * (HOUR_HEIGHT / 60));
-  return { top: `${top}px`, height: `${height}px` };
-}
+  function minutesToTop(min) {
+    return (min - START_HOUR * 60) * (HOUR_HEIGHT / 60);
+  }
 
-// Snap a pointer Y position (relative to the day column) to minutes-of-day
-function yToMinutes(clientY, columnEl) {
-  const rect = columnEl.getBoundingClientRect();
-  const y = Math.max(0, Math.min(rect.height, clientY - rect.top));
-  const raw = (y / HOUR_HEIGHT) * 60 + START_HOUR * 60;
-  return Math.round(raw / SNAP_MIN) * SNAP_MIN;
-}
+  function eventStyle(a) {
+    const start = new Date(a.start);
+    const end = new Date(a.end);
+    const top = minutesToTop(start.getHours() * 60 + start.getMinutes());
+    const height = Math.max(24, differenceInMinutes(end, start) * (HOUR_HEIGHT / 60));
+    return { top: `${top}px`, height: `${height}px` };
+  }
 
-function dateFromMinutes(day, minutes) {
-  const d = new Date(day);
-  d.setHours(0, 0, 0, 0);
-  d.setMinutes(Math.max(0, Math.min(24 * 60 - SNAP_MIN, minutes)));
-  return d;
-}
+  // Snap a pointer Y position (relative to the day column) to minutes-of-day
+  function yToMinutes(clientY, columnEl) {
+    const rect = columnEl.getBoundingClientRect();
+    const y = Math.max(0, Math.min(rect.height, clientY - rect.top));
+    const raw = (y / HOUR_HEIGHT) * 60 + START_HOUR * 60;
+    return Math.round(raw / SNAP_MIN) * SNAP_MIN;
+  }
 
-export default function TimeGridView({ date, mode, appointments, onSelectSlot, onSelectEvent, onDropEvent, onResizeEvent }) {
+  function dateFromMinutes(day, minutes) {
+    const d = new Date(day);
+    d.setHours(0, 0, 0, 0);
+    d.setMinutes(Math.max(MIN_OF_DAY, Math.min(MAX_OF_DAY - SNAP_MIN, minutes)));
+    return d;
+  }
+
   const days = useMemo(() => {
     if (mode === "day") return [date];
     const start = startOfWeek(date, { weekStartsOn: 1 });
@@ -44,7 +49,9 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
   }, [date, mode]);
 
   const now = new Date();
-  const nowTop = minutesToTop(now.getHours() * 60 + now.getMinutes());
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const nowTop = minutesToTop(nowMin);
+  const nowVisible = nowMin >= MIN_OF_DAY && nowMin <= MAX_OF_DAY;
 
   // Drag-to-create state
   const [draft, setDraft] = useState(null); // { dayKey, startMin, endMin }
@@ -174,9 +181,9 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
       {/* Grid */}
       <div className="flex flex-1">
         <div className="w-14 shrink-0">
-          {HOURS.map((h) => (
+          {HOURS.map((h, i) => (
             <div key={h} className="text-[10px] text-muted-foreground text-right pr-2 relative" style={{ height: HOUR_HEIGHT }}>
-              {h > 0 && <span className="absolute -top-1.5 right-2">{String(h).padStart(2, "0")}:00</span>}
+              {i > 0 && <span className="absolute -top-1.5 right-2">{String(h).padStart(2, "0")}:00</span>}
             </div>
           ))}
         </div>
@@ -189,7 +196,7 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
               key={day.toISOString()}
               data-day-column
               className="flex-1 relative border-l border-border select-none touch-none"
-              style={{ height: HOUR_HEIGHT * 24 }}
+              style={{ height: HOUR_HEIGHT * HOUR_COUNT }}
               onPointerDown={(e) => handlePointerDown(day, e)}
               onPointerMove={(e) => {
                 handleResizeMove(e);
@@ -210,7 +217,7 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
                 />
               ))}
 
-              {isToday && (
+              {isToday && nowVisible && (
                 <div className="absolute left-0 right-0 z-20 pointer-events-none" style={{ top: `${nowTop}px` }}>
                   <div className="h-0.5 bg-red-500" />
                   <div className="absolute -left-1 -top-[3px] w-2 h-2 rounded-full bg-red-500" />

@@ -34,6 +34,8 @@ const DEFAULTS = {
   review_html: DEFAULT_REVIEW_HTML,
   google_review_link: "",
   daily_send_hour: 9,
+  agenda_start_hour: 6,
+  agenda_end_hour: 20,
   followup_enabled: false,
   followup_months: 12,
   followup_subject: "Il est temps de penser à votre ramonage annuel",

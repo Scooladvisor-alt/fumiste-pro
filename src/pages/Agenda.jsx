@@ -14,6 +14,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useClients, useAppointments, useInterventionTypes, useRefreshData } from "@/hooks/useData";
+import { useReminderSettings } from "@/hooks/useReminderSettings";
 import MonthView from "@/components/agenda/MonthView";
 import TimeGridView from "@/components/agenda/TimeGridView";
 import AppointmentDialog from "@/components/agenda/AppointmentDialog";
@@ -28,7 +29,11 @@ export default function Agenda() {
   const { data: clients } = useClients();
   const { data: appointments } = useAppointments();
   const { data: types } = useInterventionTypes();
+  const { settings } = useReminderSettings();
   const refresh = useRefreshData();
+
+  const startHour = settings?.agenda_start_hour ?? 6;
+  const endHour = settings?.agenda_end_hour ?? 20;
 
   const [view, setView] = useState("week");
   const [cursor, setCursor] = useState(new Date());
@@ -197,6 +202,8 @@ export default function Agenda() {
             onSelectEvent={openEdit}
             onDropEvent={moveEvent}
             onResizeEvent={resizeEvent}
+            startHour={startHour}
+            endHour={endHour}
           />
         )}
       </div>

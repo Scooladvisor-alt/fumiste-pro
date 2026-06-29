@@ -56,6 +56,16 @@
       "description": "Heure (0-23, fuseau Europe/Paris) \u00e0 laquelle le logiciel envoie chaque jour les rappels et demandes d'avis",
       "default": 9
     },
+    "agenda_start_hour": {
+      "type": "number",
+      "description": "Heure de d\u00e9but affich\u00e9e dans l'agenda (0-23)",
+      "default": 6
+    },
+    "agenda_end_hour": {
+      "type": "number",
+      "description": "Heure de fin affich\u00e9e dans l'agenda (1-24)",
+      "default": 20
+    },
     "followup_enabled": {
       "type": "boolean",
       "description": "Activer l'envoi automatique des e-mails de relance ramonage",
