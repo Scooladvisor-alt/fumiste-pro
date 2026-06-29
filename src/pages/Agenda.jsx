@@ -9,7 +9,7 @@ import {
   differenceInMinutes,
 } from "date-fns";
 import { fr } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Plus, RefreshCw } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -41,42 +41,6 @@ export default function Agenda() {
   const [editing, setEditing] = useState(null);
   const [slotStart, setSlotStart] = useState(null);
   const [slotEnd, setSlotEnd] = useState(null);
-  const [syncing, setSyncing] = useState(false);
-
-  const handleSync = async () => {
-    setSyncing(true);
-    try {
-      await base44.functions.invoke("syncFromGoogle", {});
-    } catch {
-      // ignore : la synchro reprendra au prochain cycle
-    }
-    await refresh();
-    setSyncing(false);
-  };
-
-  // Synchro silencieuse (sans spinner) pour le polling automatique
-  const silentSync = async () => {
-    try {
-      await base44.functions.invoke("syncFromGoogle", {});
-      await refresh();
-    } catch {
-      // ignore
-    }
-  };
-
-  // Synchronisation auto à l'ouverture + toutes les 30s tant que l'agenda est ouvert,
-  // et dès que l'onglet redevient actif. Pas besoin d'actualiser la page.
-  useEffect(() => {
-    handleSync();
-    const interval = setInterval(silentSync, 30000);
-    const onVisible = () => { if (!document.hidden) silentSync(); };
-    document.addEventListener("visibilitychange", onVisible);
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener("visibilitychange", onVisible);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const navigate = (dir) => {
     if (view === "month") setCursor((c) => (dir > 0 ? addMonths(c, 1) : subMonths(c, 1)));
@@ -154,15 +118,6 @@ export default function Agenda() {
         <h1 className="font-display font-bold text-lg md:text-xl capitalize">{label()}</h1>
 
         <div className="ml-auto flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={handleSync}
-            disabled={syncing}
-            title="Synchroniser avec Google Agenda"
-          >
-            <RefreshCw className={cn("w-4 h-4", syncing && "animate-spin")} />
-          </Button>
           <div className="flex bg-secondary rounded-lg p-0.5">
             {VIEWS.map((v) => (
               <button
