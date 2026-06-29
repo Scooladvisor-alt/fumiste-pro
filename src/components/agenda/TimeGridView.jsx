@@ -139,15 +139,23 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
     resizeRef.current = null;
     if (!r) return;
     const cur = resizing;
-    setResizing(null);
-    if (!cur) return;
+    if (!cur) {
+      setResizing(null);
+      return;
+    }
     const day = new Date(r.appt.start);
     const newStart = dateFromMinutes(day, cur.startMin);
     const newEnd = dateFromMinutes(day, cur.endMin);
     if (cur.startMin !== r.startMin || cur.endMin !== r.endMin) {
       // On a réellement redimensionné : on bloque le clic qui suit.
       justResizedRef.current = true;
-      onResizeEvent && onResizeEvent(r.appt.id, newStart, newEnd);
+      // On garde l'affichage redimensionné le temps que la donnée parente se
+      // mette à jour, pour éviter le "retour en arrière" visuel d'une frame.
+      Promise.resolve(onResizeEvent && onResizeEvent(r.appt.id, newStart, newEnd)).finally(() => {
+        setResizing(null);
+      });
+    } else {
+      setResizing(null);
     }
   };
 
