@@ -342,12 +342,16 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
                       height: `${Math.max(24, (resizing.endMin - resizing.startMin) * (HOUR_HEIGHT / 60))}px`,
                     }
                   : eventStyle(a);
-                const startLabel = isResizing
-                  ? `${String(Math.floor(resizing.startMin / 60)).padStart(2, "0")}:${String(resizing.startMin % 60).padStart(2, "0")}`
-                  : format(new Date(a.start), "HH:mm");
-                const endLabel = isResizing
-                  ? `${String(Math.floor(resizing.endMin / 60)).padStart(2, "0")}:${String(resizing.endMin % 60).padStart(2, "0")}`
-                  : format(new Date(a.end), "HH:mm");
+                // Durée affichée (tient compte du redimensionnement en cours).
+                const durationMin = isResizing
+                  ? resizing.endMin - resizing.startMin
+                  : differenceInMinutes(new Date(a.end), new Date(a.start));
+                const isLong = durationMin > 60;
+                // Sépare la prestation et le nom du client depuis le titre "Prestation - Client".
+                const service = a.intervention_type || (a.title || "").split(" - ")[0] || "Intervention";
+                const clientName = (a.title || "").includes(" - ")
+                  ? a.title.split(" - ").slice(1).join(" - ")
+                  : "";
                 const pos = layout.get(a.id) || { col: 0, cols: 1 };
                 const gap = 2; // px entre colonnes
                 const colStyle = {
@@ -385,10 +389,18 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
                     >
                       <div className="mx-auto mt-0.5 w-6 h-1 rounded-full bg-white/60 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
-                    <p className="text-[11px] font-semibold leading-tight truncate">{a.title}</p>
-                    <p className="text-[10px] opacity-90">
-                      {startLabel} - {endLabel}
-                    </p>
+                    {isLong ? (
+                      <>
+                        <p className="text-[11px] font-semibold leading-tight truncate">{service}</p>
+                        {clientName && (
+                          <p className="text-[10px] leading-tight opacity-90 truncate">{clientName}</p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-[11px] font-semibold leading-tight truncate">
+                        {service}{clientName ? ` · ${clientName}` : ""}
+                      </p>
+                    )}
                     <EventBadges appointment={a} className="mt-0.5" />
                     <div
                       onPointerDown={(e) => handleResizeDown(a, "bottom", e)}
