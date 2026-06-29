@@ -27,6 +27,47 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
     return { top: `${top}px`, height: `${height}px` };
   }
 
+  // Calcule la disposition en colonnes des événements qui se chevauchent
+  // pour qu'ils s'affichent côte à côte (partage équitable de la largeur).
+  function computeLayout(events) {
+    const items = events
+      .map((a) => {
+        const s = new Date(a.start);
+        const e = new Date(a.end);
+        return { a, startMin: s.getHours() * 60 + s.getMinutes(), endMin: e.getHours() * 60 + e.getMinutes() };
+      })
+      .sort((x, y) => x.startMin - y.startMin || x.endMin - y.endMin);
+
+    const layout = new Map(); // id -> { col, cols }
+    let cluster = [];
+    let clusterEnd = -1;
+
+    const flush = () => {
+      if (!cluster.length) return;
+      const colsEnd = []; // fin (min) du dernier événement de chaque colonne
+      cluster.forEach((it) => {
+        let placed = -1;
+        for (let c = 0; c < colsEnd.length; c++) {
+          if (it.startMin >= colsEnd[c]) { placed = c; break; }
+        }
+        if (placed === -1) { placed = colsEnd.length; colsEnd.push(it.endMin); }
+        else colsEnd[placed] = it.endMin;
+        it.col = placed;
+      });
+      const total = colsEnd.length;
+      cluster.forEach((it) => layout.set(it.a.id, { col: it.col, cols: total }));
+      cluster = [];
+    };
+
+    items.forEach((it) => {
+      if (cluster.length && it.startMin >= clusterEnd) flush();
+      cluster.push(it);
+      clusterEnd = Math.max(clusterEnd, it.endMin);
+    });
+    flush();
+    return layout;
+  }
+
   // Snap a pointer Y position (relative to the day column) to minutes-of-day
   function yToMinutes(clientY, columnEl) {
     const rect = columnEl.getBoundingClientRect();
@@ -189,6 +230,7 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
         </div>
         {days.map((day) => {
           const dayEvents = appointments.filter((a) => isSameDay(new Date(a.start), day));
+          const layout = computeLayout(dayEvents);
           const isToday = isSameDay(day, now);
           const dayDraft = draft && draft.dayKey === day.toISOString() ? draft : null;
           return (
@@ -256,6 +298,12 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
                 const endLabel = isResizing
                   ? `${String(Math.floor(resizing.endMin / 60)).padStart(2, "0")}:${String(resizing.endMin % 60).padStart(2, "0")}`
                   : format(new Date(a.end), "HH:mm");
+                const pos = layout.get(a.id) || { col: 0, cols: 1 };
+                const gap = 2; // px entre colonnes
+                const colStyle = {
+                  left: `calc(${(pos.col / pos.cols) * 100}% + ${pos.col === 0 ? 4 : gap}px)`,
+                  width: `calc(${(1 / pos.cols) * 100}% - ${pos.cols === 1 ? 8 : gap + 2}px)`,
+                };
                 return (
                   <div
                     key={a.id}
@@ -276,8 +324,8 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
                       }
                       if (!isResizing) onSelectEvent(a);
                     }}
-                    className="absolute left-1 right-1 z-10 rounded-lg px-2 py-1 text-left text-white overflow-hidden shadow-sm cursor-pointer group"
-                    style={{ ...style, backgroundColor: a.color || "#3b82f6" }}
+                    className="absolute z-10 rounded-lg px-2 py-1 text-left text-white overflow-hidden shadow-sm cursor-pointer group"
+                    style={{ ...style, ...colStyle, backgroundColor: a.color || "#3b82f6" }}
                   >
                     <div
                       onPointerDown={(e) => handleResizeDown(a, "top", e)}
