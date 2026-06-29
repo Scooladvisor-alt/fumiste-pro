@@ -21,8 +21,7 @@ export default function UpcomingAppointments({ appointments, clients }) {
 
   return (
     <div className="bg-card rounded-2xl border border-border p-5">
-      <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
-        <h2 className="font-display font-bold text-lg">Prochains rendez-vous</h2>
+      <div className="flex items-center justify-end mb-4 gap-2 flex-wrap">
         <div className="flex items-center gap-3">
           <div className="inline-flex rounded-xl bg-muted p-1">
             {[

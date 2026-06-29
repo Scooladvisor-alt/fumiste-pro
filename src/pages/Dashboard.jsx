@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useState } from "react";
 import { format, subDays } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Users } from "lucide-react";
+import { Users, BarChart3, CalendarClock } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useClients, useAppointments, useCommunicationLogs } from "@/hooks/useData";
 import PeriodFilter from "@/components/dashboard/PeriodFilter";
@@ -56,14 +56,33 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="bg-card rounded-2xl border border-border p-5 mb-6 shadow-sm">
-        <div className="flex items-center justify-between mb-5 gap-2 flex-wrap">
-          <h2 className="font-display font-bold text-lg">Tour de contrôle</h2>
+      {/* Section : suivi des communications */}
+      <div className="flex items-center gap-2.5 mb-3 px-1">
+        <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <BarChart3 className="w-[18px] h-[18px]" />
+        </div>
+        <div>
+          <h2 className="font-display font-bold text-lg leading-tight">Tour de contrôle</h2>
+          <p className="text-xs text-muted-foreground">Vos communications automatiques en un coup d'œil.</p>
+        </div>
+      </div>
+      <div className="bg-card rounded-2xl border border-border p-5 mb-8 shadow-sm">
+        <div className="flex items-center justify-end mb-5">
           <PeriodFilter value={period} onChange={setPeriod} />
         </div>
         <CommunicationStats counts={counts} total={total} />
       </div>
 
+      {/* Section : prochains rendez-vous */}
+      <div className="flex items-center gap-2.5 mb-3 px-1">
+        <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <CalendarClock className="w-[18px] h-[18px]" />
+        </div>
+        <div>
+          <h2 className="font-display font-bold text-lg leading-tight">Votre journée</h2>
+          <p className="text-xs text-muted-foreground">Les interventions à venir, prêtes à être appelées.</p>
+        </div>
+      </div>
       <UpcomingAppointments appointments={appointments} clients={clients} />
     </div>
   );
