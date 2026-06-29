@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Mail, CheckCircle2, XCircle, RefreshCw } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 export default function GmailConnectionStatus() {
@@ -25,14 +24,14 @@ export default function GmailConnectionStatus() {
   }, []);
 
   return (
-    <Card className="p-5">
-      <div className="flex items-start gap-4">
-        <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center shrink-0">
-          <Mail className="w-5 h-5 text-ember" />
+    <div className="bg-card rounded-2xl border border-border p-5">
+      <div className="flex items-start gap-3">
+        <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <Mail className="w-[18px] h-[18px]" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-3">
-            <h3 className="font-display font-semibold">Connexion Gmail</h3>
+            <h2 className="font-display font-bold text-lg">Connexion Gmail</h2>
             <Button
               variant="ghost"
               size="icon"
@@ -68,6 +67,6 @@ export default function GmailConnectionStatus() {
           </div>
         </div>
       </div>
-    </Card>
+    </div>
   );
 }
