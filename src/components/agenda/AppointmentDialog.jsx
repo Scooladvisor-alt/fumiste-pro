@@ -183,7 +183,7 @@ export default function AppointmentDialog({
               value={form.intervention_type}
               onValueChange={setType}
             >
-              <SelectTrigger className="h-11">
+              <SelectTrigger className={form.intervention_type ? "h-11 shine-select border-ember/40 ring-1 ring-ember/20" : "h-11"}>
                 <SelectValue placeholder="Choisir…" />
               </SelectTrigger>
               <SelectContent>

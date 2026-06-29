@@ -86,6 +86,34 @@
 
 
 
+@layer utilities {
+  .shine-select {
+    position: relative;
+    overflow: hidden;
+  }
+  .shine-select::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -150%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(
+      120deg,
+      transparent,
+      hsl(var(--ember-glow) / 0.35),
+      transparent
+    );
+    transform: skewX(-20deg);
+    animation: shine-sweep 3.5s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes shine-sweep {
+    0% { left: -150%; }
+    45%, 100% { left: 150%; }
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
