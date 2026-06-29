@@ -44,7 +44,8 @@ export default function AppointmentDialog({
       ? new Date(base.end)
       : defaultEnd || new Date(start.getTime() + 60 * 60 * 1000);
     const client = clients.find((c) => c.id === base.client_id);
-    const type = base.intervention_type || (types[0]?.name ?? "");
+    const ramonage = types.find((t) => /ramonage/i.test(t.name));
+    const type = base.intervention_type || ramonage?.name || (types[0]?.name ?? "");
     setForm({
       client_id: base.client_id || "",
       intervention_type: type,
@@ -183,7 +184,7 @@ export default function AppointmentDialog({
               value={form.intervention_type}
               onValueChange={setType}
             >
-              <SelectTrigger className={form.intervention_type ? "h-11 shine-select border-ember/40 ring-1 ring-ember/20" : "h-11"}>
+              <SelectTrigger className="h-11">
                 <SelectValue placeholder="Choisir…" />
               </SelectTrigger>
               <SelectContent>
