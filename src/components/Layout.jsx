@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, Calendar, Flame, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, Settings, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ensureInterventionTypes } from "@/lib/seed";
 import { base44 } from "@/api/base44Client";
@@ -24,20 +24,10 @@ export default function Layout() {
 
   return (
     <div className="h-screen flex flex-col font-body bg-[#fbf7f4]">
-      {/* Barre supérieure braise (desktop) — pleine largeur pour laisser plus d'espace au contenu */}
-      <header className="hidden lg:flex shrink-0 bg-[#1c1410] text-white/90 relative overflow-hidden items-center px-6 h-16">
-        {/* lueur de braise */}
-        <div className="pointer-events-none absolute -bottom-20 left-1/4 w-72 h-72 rounded-full bg-gradient-to-t from-ember-glow/30 via-ember/15 to-transparent blur-3xl" />
-        <div className="pointer-events-none absolute -top-10 right-0 w-40 h-40 rounded-full bg-ember/10 blur-2xl" />
-
-        <div className="relative flex items-center gap-3 pr-6">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-ember-glow via-ember to-ember-deep flex items-center justify-center shadow-lg shadow-ember/40">
-            <Flame className="w-5 h-5 text-white" />
-          </div>
-          <div className="leading-tight">
-            <p className="font-display font-extrabold text-base tracking-tight text-white">Fumiste Pro</p>
-            <p className="text-[10px] uppercase tracking-[0.2em] text-ember-glow/80 font-semibold">Gestion ramonage</p>
-          </div>
+      {/* Barre supérieure claire (desktop) — pleine largeur pour laisser plus d'espace au contenu */}
+      <header className="hidden lg:flex shrink-0 bg-card text-foreground border-b border-border relative items-center px-6 h-16">
+        <div className="relative flex items-center pr-6">
+          <p className="font-display font-extrabold text-lg tracking-tight text-foreground">Fumiste Pro</p>
         </div>
 
         <nav className="relative flex items-center gap-1 flex-1">
@@ -51,7 +41,7 @@ export default function Layout() {
                   "group flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all",
                   active
                     ? "bg-gradient-to-r from-ember to-ember-deep text-white shadow-lg shadow-ember/30"
-                    : "text-white/55 hover:text-white hover:bg-white/5"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                 )}
               >
                 <Icon className={cn("w-[18px] h-[18px] transition-transform", !active && "group-hover:scale-110")} />
@@ -63,7 +53,7 @@ export default function Layout() {
 
         <button
           onClick={() => base44.auth.logout()}
-          className="relative flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-medium text-white/55 hover:text-white hover:bg-white/5 transition-colors"
+          className="relative flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
         >
           <LogOut className="w-[18px] h-[18px]" />
           Se déconnecter
@@ -72,13 +62,10 @@ export default function Layout() {
 
       {/* Mobile top bar */}
       <div className="flex-1 min-w-0 flex flex-col">
-        <header className="lg:hidden shrink-0 bg-[#1c1410] text-white sticky top-0 z-20">
+        <header className="lg:hidden shrink-0 bg-card text-foreground border-b border-border sticky top-0 z-20">
           <div className="flex items-center gap-3 px-4 h-16">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-ember-glow via-ember to-ember-deep flex items-center justify-center">
-              <Flame className="w-5 h-5 text-white" />
-            </div>
-            <p className="font-display font-extrabold text-base tracking-tight flex-1">Fumiste Pro</p>
-            <button onClick={() => base44.auth.logout()} className="text-white/60 hover:text-white p-2">
+            <p className="font-display font-extrabold text-lg tracking-tight flex-1">Fumiste Pro</p>
+            <button onClick={() => base44.auth.logout()} className="text-muted-foreground hover:text-foreground p-2">
               <LogOut className="w-5 h-5" />
             </button>
           </div>
@@ -91,7 +78,7 @@ export default function Layout() {
                   to={to}
                   className={cn(
                     "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors",
-                    active ? "bg-gradient-to-r from-ember to-ember-deep text-white" : "text-white/55"
+                    active ? "bg-gradient-to-r from-ember to-ember-deep text-white" : "text-muted-foreground"
                   )}
                 >
                   <Icon className="w-[18px] h-[18px]" />

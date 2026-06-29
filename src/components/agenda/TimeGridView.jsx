@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { startOfWeek, addDays, isSameDay, format, differenceInMinutes } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -103,6 +103,37 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
   const resizeRef = useRef(null); // { columnEl, appt, edge, startMin, endMin }
   const justResizedRef = useRef(false); // ignore le clic qui suit un redimensionnement
 
+  // Override local : fige l'affichage d'un événement (déplacé ou redimensionné) à sa
+  // nouvelle position tant que la donnée parente n'est pas synchronisée. Évite le
+  // "retour en arrière" visuel pendant le rechargement.
+  const [overrides, setOverrides] = useState({}); // id -> { start, end }
+
+  // Applique les overrides locaux sur les rendez-vous reçus en props.
+  const effectiveAppointments = useMemo(() => {
+    if (!Object.keys(overrides).length) return appointments;
+    return appointments.map((a) => {
+      const o = overrides[a.id];
+      if (!o) return a;
+      // Si la donnée parente correspond déjà à l'override, on peut l'oublier.
+      if (a.start === o.start && a.end === o.end) return a;
+      return { ...a, start: o.start, end: o.end };
+    });
+  }, [appointments, overrides]);
+
+  // Nettoie les overrides dès que la donnée parente les a rattrapés.
+  useEffect(() => {
+    setOverrides((prev) => {
+      const next = {};
+      let changed = false;
+      for (const [id, o] of Object.entries(prev)) {
+        const a = appointments.find((x) => x.id === id);
+        if (a && a.start === o.start && a.end === o.end) { changed = true; continue; }
+        next[id] = o;
+      }
+      return changed ? next : prev;
+    });
+  }, [appointments]);
+
   const handleResizeDown = (appt, edge, e) => {
     e.stopPropagation();
     e.preventDefault();
@@ -149,14 +180,14 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
     if (cur.startMin !== r.startMin || cur.endMin !== r.endMin) {
       // On a réellement redimensionné : on bloque le clic qui suit.
       justResizedRef.current = true;
-      // On garde l'affichage redimensionné le temps que la donnée parente se
-      // mette à jour, pour éviter le "retour en arrière" visuel d'une frame.
-      Promise.resolve(onResizeEvent && onResizeEvent(r.appt.id, newStart, newEnd)).finally(() => {
-        setResizing(null);
-      });
-    } else {
-      setResizing(null);
+      // Fige immédiatement la nouvelle position en local jusqu'à la synchro parente.
+      setOverrides((prev) => ({
+        ...prev,
+        [r.appt.id]: { start: newStart.toISOString(), end: newEnd.toISOString() },
+      }));
+      onResizeEvent && onResizeEvent(r.appt.id, newStart, newEnd);
     }
+    setResizing(null);
   };
 
   const handlePointerDown = (day, e) => {
@@ -203,7 +234,18 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
     e.preventDefault();
     const id = e.dataTransfer.getData("text/plain");
     const minutes = yToMinutes(e.clientY, e.currentTarget);
-    onDropEvent && onDropEvent(id, dateFromMinutes(day, minutes));
+    const newStart = dateFromMinutes(day, minutes);
+    // Fige immédiatement la nouvelle position en conservant la durée d'origine.
+    const appt = appointments.find((a) => a.id === id);
+    if (appt) {
+      const duration = differenceInMinutes(new Date(appt.end), new Date(appt.start));
+      const newEnd = new Date(newStart.getTime() + duration * 60000);
+      setOverrides((prev) => ({
+        ...prev,
+        [id]: { start: newStart.toISOString(), end: newEnd.toISOString() },
+      }));
+    }
+    onDropEvent && onDropEvent(id, newStart);
   };
 
   return (
@@ -237,7 +279,7 @@ export default function TimeGridView({ date, mode, appointments, onSelectSlot, o
           ))}
         </div>
         {days.map((day) => {
-          const dayEvents = appointments.filter((a) => isSameDay(new Date(a.start), day));
+          const dayEvents = effectiveAppointments.filter((a) => isSameDay(new Date(a.start), day));
           const layout = computeLayout(dayEvents);
           const isToday = isSameDay(day, now);
           const dayDraft = draft && draft.dayKey === day.toISOString() ? draft : null;
