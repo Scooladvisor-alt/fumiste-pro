@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Lock, PenLine, Download } from "lucide-react";
-import { format } from "date-fns";
+import { format, addMonths } from "date-fns";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { base44 } from "@/api/base44Client";
@@ -18,13 +18,8 @@ export default function Certificat() {
   const sheetRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [cert, setCert] = useState(null); // certificat signé et verrouillé
-  const [draft, setDraft] = useState(null); // données préremplies
-  const [form, setForm] = useState({
-    conforme: "conforme",
-    observations: "",
-    non_conformites: "",
-    commentaires: "",
-  });
+  const [draft, setDraft] = useState(null); // données préremplies (fixes)
+  const [form, setForm] = useState(null); // champs à compléter dans la feuille
   const [saving, setSaving] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState("");
@@ -54,7 +49,6 @@ export default function Certificat() {
         ? await base44.entities.Client.get(appt.client_id).catch(() => null)
         : null;
       const [settings] = await base44.entities.ReminderSettings.list();
-      const me = await base44.auth.me().catch(() => null);
       const all = await base44.entities.RamonageCertificate.list();
       const start = new Date(appt.start);
       setDraft({
@@ -62,13 +56,27 @@ export default function Certificat() {
         appointment_id: appointmentId,
         client_id: appt.client_id || "",
         client_name: client?.full_name || "",
-        client_address: client?.city || "",
         client_email: client?.email || "",
         client_phone: client?.phone || "",
         intervention_date: format(start, "yyyy-MM-dd"),
         intervention_time: format(start, "HH:mm"),
         company_name: settings?.company_name || "",
-        company_details: me?.email || "",
+        company_address: settings?.company_address || "",
+        company_phone: settings?.company_phone || "",
+        company_siret: settings?.company_siret || "",
+        company_rc_pro: settings?.company_rc_pro || "",
+      });
+      setForm({
+        client_address: client?.city || "",
+        intervention_address: "",
+        conduit_type: "",
+        combustible: "",
+        methode_ramonage: "",
+        etat_conduit: "bon",
+        observations: "Aucune anomalie constatée. Conduit en bon état de fonctionnement.",
+        conforme: "conforme",
+        next_ramonage_date: format(addMonths(start, 12), "yyyy-MM-dd"),
+        professional_name: settings?.company_name || "",
       });
       setLoading(false);
     })();

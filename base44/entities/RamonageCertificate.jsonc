@@ -30,6 +30,10 @@
       "type": "string",
       "description": "T\u00e9l\u00e9phone du client"
     },
+    "intervention_address": {
+      "type": "string",
+      "description": "Adresse d'intervention (si diff\u00e9rente de l'adresse du client)"
+    },
     "intervention_date": {
       "type": "string",
       "format": "date",
@@ -43,9 +47,47 @@
       "type": "string",
       "description": "Nom de l'entreprise"
     },
-    "company_details": {
+    "company_address": {
       "type": "string",
-      "description": "Coordonn\u00e9es de l'entreprise"
+      "description": "Adresse de l'entreprise"
+    },
+    "company_phone": {
+      "type": "string",
+      "description": "T\u00e9l\u00e9phone de l'entreprise"
+    },
+    "company_siret": {
+      "type": "string",
+      "description": "Num\u00e9ro SIRET de l'entreprise"
+    },
+    "company_rc_pro": {
+      "type": "string",
+      "description": "Num\u00e9ro d'assurance RC Professionnelle"
+    },
+    "conduit_type": {
+      "type": "string",
+      "description": "Type de conduit (tubage inox, ma\u00e7onnerie, flexible\u2026)"
+    },
+    "combustible": {
+      "type": "string",
+      "description": "Combustible (bois, granul\u00e9s, gaz, fioul\u2026)"
+    },
+    "methode_ramonage": {
+      "type": "string",
+      "description": "M\u00e9thode de ramonage utilis\u00e9e (m\u00e9canique par le haut/bas, outils\u2026)"
+    },
+    "etat_conduit": {
+      "type": "string",
+      "enum": [
+        "bon",
+        "correct",
+        "degrade"
+      ],
+      "description": "\u00c9tat g\u00e9n\u00e9ral du conduit",
+      "default": "bon"
+    },
+    "observations": {
+      "type": "string",
+      "description": "Observations et anomalies constat\u00e9es"
     },
     "conforme": {
       "type": "string",
@@ -53,20 +95,17 @@
         "conforme",
         "non_conforme"
       ],
-      "description": "R\u00e9sultat de l'intervention",
+      "description": "R\u00e9sultat du test de vacuit\u00e9",
       "default": "conforme"
     },
-    "observations": {
+    "next_ramonage_date": {
       "type": "string",
-      "description": "Observations"
+      "format": "date",
+      "description": "Date recommand\u00e9e du prochain ramonage (YYYY-MM-DD)"
     },
-    "non_conformites": {
+    "professional_name": {
       "type": "string",
-      "description": "Non-conformit\u00e9s \u00e9ventuelles"
-    },
-    "commentaires": {
-      "type": "string",
-      "description": "Commentaires compl\u00e9mentaires"
+      "description": "Nom du professionnel signataire"
     },
     "signature_url": {
       "type": "string",

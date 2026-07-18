@@ -6,6 +6,22 @@
       "type": "string",
       "description": "Nom de l'entreprise du client (affich\u00e9 dans le tableau de bord)"
     },
+    "company_address": {
+      "type": "string",
+      "description": "Adresse de l'entreprise (mention obligatoire du certificat de ramonage)"
+    },
+    "company_phone": {
+      "type": "string",
+      "description": "T\u00e9l\u00e9phone de l'entreprise (mention obligatoire du certificat de ramonage)"
+    },
+    "company_siret": {
+      "type": "string",
+      "description": "Num\u00e9ro SIRET de l'entreprise (mention obligatoire du certificat de ramonage)"
+    },
+    "company_rc_pro": {
+      "type": "string",
+      "description": "Num\u00e9ro d'assurance RC Professionnelle (mention obligatoire du certificat de ramonage)"
+    },
     "onboarding_completed": {
       "type": "boolean",
       "description": "L'utilisateur a termin\u00e9 la configuration initiale (onboarding)",
