@@ -18,6 +18,7 @@ import Dashboard from '@/pages/Dashboard';
 import Clients from '@/pages/Clients';
 import Agenda from '@/pages/Agenda';
 import Parametres from '@/pages/Parametres';
+import Certificat from '@/pages/Certificat';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -59,6 +60,7 @@ const AuthenticatedApp = () => {
             <Route path="/clients" element={<Clients />} />
             <Route path="/agenda" element={<Agenda />} />
             <Route path="/parametres" element={<Parametres />} />
+            <Route path="/certificat" element={<Certificat />} />
           </Route>
         </Route>
       </Route>

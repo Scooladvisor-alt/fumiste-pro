@@ -1,0 +1,104 @@
+{
+  "name": "RamonageCertificate",
+  "type": "object",
+  "properties": {
+    "certificate_number": {
+      "type": "string",
+      "description": "Num\u00e9ro unique du certificat (g\u00e9n\u00e9r\u00e9 automatiquement)"
+    },
+    "appointment_id": {
+      "type": "string",
+      "description": "ID du rendez-vous d'origine"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "ID du client concern\u00e9"
+    },
+    "client_name": {
+      "type": "string",
+      "description": "Nom du client"
+    },
+    "client_address": {
+      "type": "string",
+      "description": "Adresse du client"
+    },
+    "client_email": {
+      "type": "string",
+      "description": "E-mail du client"
+    },
+    "client_phone": {
+      "type": "string",
+      "description": "T\u00e9l\u00e9phone du client"
+    },
+    "intervention_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date de l'intervention (YYYY-MM-DD)"
+    },
+    "intervention_time": {
+      "type": "string",
+      "description": "Heure de l'intervention (HH:mm)"
+    },
+    "company_name": {
+      "type": "string",
+      "description": "Nom de l'entreprise"
+    },
+    "company_details": {
+      "type": "string",
+      "description": "Coordonn\u00e9es de l'entreprise"
+    },
+    "conforme": {
+      "type": "string",
+      "enum": [
+        "conforme",
+        "non_conforme"
+      ],
+      "description": "R\u00e9sultat de l'intervention",
+      "default": "conforme"
+    },
+    "observations": {
+      "type": "string",
+      "description": "Observations"
+    },
+    "non_conformites": {
+      "type": "string",
+      "description": "Non-conformit\u00e9s \u00e9ventuelles"
+    },
+    "commentaires": {
+      "type": "string",
+      "description": "Commentaires compl\u00e9mentaires"
+    },
+    "signature_url": {
+      "type": "string",
+      "description": "URL de l'image de la signature du client"
+    },
+    "signed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date et heure de la signature"
+    },
+    "locked": {
+      "type": "boolean",
+      "description": "Certificat sign\u00e9 et verrouill\u00e9 (non modifiable)",
+      "default": false
+    }
+  },
+  "required": [
+    "certificate_number",
+    "appointment_id"
+  ],
+  "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

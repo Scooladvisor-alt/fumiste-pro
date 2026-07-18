@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, FileCheck } from "lucide-react";
+import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
   Dialog,
@@ -260,6 +261,15 @@ export default function AppointmentDialog({
               rows={5}
             />
           </div>
+
+          {appointment?.id && /ramonage/i.test(form.intervention_type || "") && (
+            <Button asChild variant="secondary" className="w-full h-11">
+              <Link to={`/certificat?appointment_id=${appointment.id}`}>
+                <FileCheck className="w-4 h-4 mr-1.5" />
+                Générer le certificat de ramonage
+              </Link>
+            </Button>
+          )}
         </div>
 
         <DialogFooter className="flex-row justify-between sm:justify-between gap-2">
