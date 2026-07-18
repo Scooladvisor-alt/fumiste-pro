@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, Plus, Trash2, Download, Users } from "lucide-react";
+import { Search, Plus, Trash2, Download, Users, FileCheck } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,12 +8,14 @@ import ClientDialog from "@/components/clients/ClientDialog";
 import EditableCell from "@/components/clients/EditableCell";
 import FollowupSentIcon from "@/components/clients/FollowupSentIcon";
 import { exportClientsToCsv } from "@/lib/exportCsv";
+import ClientCertificates from "@/components/clients/ClientCertificates";
 
 export default function Clients() {
   const { data: clients } = useClients();
   const refresh = useRefreshData();
   const [query, setQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [certClient, setCertClient] = useState(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -85,6 +87,7 @@ export default function Clients() {
                   <th className="px-3 py-2.5 font-semibold">E-mail</th>
                   <th className="px-3 py-2.5 font-semibold">Dernier ramonage</th>
                   <th className="px-3 py-2.5 font-semibold">Dernier test étanchéité</th>
+                  <th className="px-3 py-2.5 font-semibold">Certificats</th>
                   <th className="px-3 py-2.5 w-10" />
                 </tr>
               </thead>
@@ -115,6 +118,16 @@ export default function Clients() {
                         <FollowupSentIcon interventionDate={c.last_etancheite_date} sentDate={c.etancheite_followup_sent_date} />
                       </div>
                     </td>
+                    <td className="px-1.5 py-1 align-middle">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setCertClient(c)}
+                        className="h-8 gap-1.5 text-muted-foreground hover:text-primary"
+                      >
+                        <FileCheck className="w-4 h-4" /> Voir
+                      </Button>
+                    </td>
                     <td className="px-1.5 py-1 align-middle text-right">
                       <Button
                         variant="ghost"
@@ -134,6 +147,11 @@ export default function Clients() {
       </div>
 
       <ClientDialog open={dialogOpen} onOpenChange={setDialogOpen} client={null} />
+      <ClientCertificates
+        client={certClient}
+        open={!!certClient}
+        onOpenChange={(o) => !o && setCertClient(null)}
+      />
     </div>
   );
 }

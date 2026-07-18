@@ -1,18 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Lock, PenLine } from "lucide-react";
+import { ArrowLeft, Lock, PenLine, Download } from "lucide-react";
 import { format } from "date-fns";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import CertificatView from "@/components/certificat/CertificatView";
-import CertificatForm from "@/components/certificat/CertificatForm";
+import CertificatSheet from "@/components/certificat/CertificatSheet";
 import SignaturePad from "@/components/certificat/SignaturePad";
 
 export default function Certificat() {
   const urlParams = new URLSearchParams(window.location.search);
   const appointmentId = urlParams.get("appointment_id");
+  const certId = urlParams.get("id");
 
   const padRef = useRef(null);
+  const sheetRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [cert, setCert] = useState(null); // certificat signé et verrouillé
   const [draft, setDraft] = useState(null); // données préremplies
@@ -23,14 +26,21 @@ export default function Certificat() {
     commentaires: "",
   });
   const [saving, setSaving] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!appointmentId) {
-      setLoading(false);
-      return;
-    }
     (async () => {
+      if (certId) {
+        const existing = await base44.entities.RamonageCertificate.get(certId).catch(() => null);
+        setCert(existing);
+        setLoading(false);
+        return;
+      }
+      if (!appointmentId) {
+        setLoading(false);
+        return;
+      }
       const [existing] = await base44.entities.RamonageCertificate.filter({
         appointment_id: appointmentId,
       });
@@ -62,7 +72,7 @@ export default function Certificat() {
       });
       setLoading(false);
     })();
-  }, [appointmentId]);
+  }, [appointmentId, certId]);
 
   const handleSign = async () => {
     setError("");
@@ -86,6 +96,18 @@ export default function Certificat() {
     window.scrollTo(0, 0);
   };
 
+  const handleDownloadPdf = async () => {
+    setDownloading(true);
+    const canvas = await html2canvas(sheetRef.current, { scale: 2, useCORS: true });
+    const img = canvas.toDataURL("image/png");
+    const pdf = new jsPDF({ unit: "mm", format: "a4" });
+    const width = 210;
+    const height = (canvas.height * width) / canvas.width;
+    pdf.addImage(img, "PNG", 0, 0, width, Math.min(height, 297));
+    pdf.save(`certificat-${cert.certificate_number}.pdf`);
+    setDownloading(false);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center py-20">
@@ -94,10 +116,10 @@ export default function Certificat() {
     );
   }
 
-  if (!appointmentId || (!cert && !draft)) {
+  if (!cert && !draft) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12 text-center space-y-4">
-        <p className="text-muted-foreground">Rendez-vous introuvable.</p>
+        <p className="text-muted-foreground">Certificat introuvable.</p>
         <Button asChild variant="outline">
           <Link to="/agenda">
             <ArrowLeft className="w-4 h-4 mr-1" /> Retour à l'agenda
@@ -108,42 +130,46 @@ export default function Certificat() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
-      <div className="flex items-center justify-between gap-3">
+    <div className="max-w-4xl mx-auto px-3 sm:px-4 py-6 space-y-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <Button asChild variant="ghost" size="sm">
           <Link to="/agenda">
             <ArrowLeft className="w-4 h-4 mr-1" /> Agenda
           </Link>
         </Button>
         {cert && (
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground bg-secondary rounded-full px-3 py-1.5">
-            <Lock className="w-3.5 h-3.5" /> Certificat signé et verrouillé
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground bg-secondary rounded-full px-3 py-1.5">
+              <Lock className="w-3.5 h-3.5" /> Signé et verrouillé
+            </span>
+            <Button size="sm" onClick={handleDownloadPdf} disabled={downloading}>
+              <Download className="w-4 h-4 mr-1.5" />
+              {downloading ? "Génération…" : "Télécharger en PDF"}
+            </Button>
+          </div>
         )}
       </div>
 
-      <CertificatView cert={cert || draft} />
+      <CertificatSheet
+        sheetRef={sheetRef}
+        cert={cert || draft}
+        editable={!cert}
+        form={form}
+        onChange={setForm}
+        signatureArea={<SignaturePad ref={padRef} />}
+      />
 
       {!cert && (
-        <>
-          <div className="bg-card rounded-2xl border border-border shadow-sm p-5 space-y-4">
-            <h2 className="font-display font-bold text-lg">À compléter avant signature</h2>
-            <CertificatForm form={form} onChange={setForm} />
-          </div>
-
-          <div className="bg-card rounded-2xl border border-border shadow-sm p-5 space-y-4">
-            <h2 className="font-display font-bold text-lg">Signature du client</h2>
-            <SignaturePad ref={padRef} />
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button className="w-full h-12 text-base" onClick={handleSign} disabled={saving}>
-              <PenLine className="w-4 h-4 mr-1.5" />
-              {saving ? "Enregistrement…" : "Valider et verrouiller le certificat"}
-            </Button>
-            <p className="text-xs text-muted-foreground text-center">
-              Une fois signé, le certificat ne pourra plus être modifié.
-            </p>
-          </div>
-        </>
+        <div className="max-w-[794px] mx-auto space-y-3 pb-8">
+          {error && <p className="text-sm text-destructive text-center">{error}</p>}
+          <Button className="w-full h-12 text-base" onClick={handleSign} disabled={saving}>
+            <PenLine className="w-4 h-4 mr-1.5" />
+            {saving ? "Enregistrement…" : "Valider et verrouiller le certificat"}
+          </Button>
+          <p className="text-xs text-muted-foreground text-center">
+            Une fois signé, le certificat ne pourra plus être modifié.
+          </p>
+        </div>
       )}
     </div>
   );
