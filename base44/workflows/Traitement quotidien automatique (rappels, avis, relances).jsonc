@@ -1,0 +1,46 @@
+{
+  "name": "Traitement quotidien automatique (rappels, avis, relances)",
+  "description": "Tourne chaque heure mais n'ex\u00e9cute le traitement complet (rappels d'intervention, demandes d'avis Google, relances ramonage et \u00e9tanch\u00e9it\u00e9) QU'\u00e0 l'heure d\u00e9finie dans \u00ab Heure de passage quotidien \u00bb des r\u00e9glages (fuseau Europe/Paris). Source de v\u00e9rit\u00e9 unique.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "interval",
+      "cron_expression": null,
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": 1,
+      "interval_unit": "hours",
+      "interval_anchor": "2026-06-28T08:50:12.278000",
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "traitement_quotidien_automatique_rappels_avis_relances",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "runScheduledEmails",
+            "args": {
+              "auto": true
+            }
+          },
+          "then": "end"
+        }
+      }
+    ]
+  },
+  "x-base44-migrated-from-automation": {
+    "legacy_payload_function": "runScheduledEmails"
+  }
+}
